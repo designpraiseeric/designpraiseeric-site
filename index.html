@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DesignPraise Eric — Art direction, motion design and film</title>
+<meta name="description" content="Divinepraise Eric is a Lagos-based art director and motion designer working on films, animation and brand systems, and the maker of Colored Lens, Lukuluku, Colored Lens Studio and Aline.">
+<meta property="og:title" content="DesignPraise Eric — Art direction, motion design and film">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<script>try{const t=localStorage.getItem("dp-theme")||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.dataset.theme=t}catch(e){}</script>
+<style>
+/* VOICE: a professional studio site that moves — plain words, lively surfaces
+   IDEA: everything behaves like a 3x3 cube: tiles turn a quarter, headings arrive as a layer turn, the reel is a face that turns row by row
+   PICTURE: a 3x3 mosaic of real frames that turns between images, under the wordmark that draws and unfurls
+   COLOUR and TYPE: white and paper, violet for action, amber sparingly; DesignPraise Sans + Google Sans Code for data
+   LAYOUT: one calm column of sections; work in three columns; tools as tiles that open into working demos */
+:root[data-theme=dark]{color-scheme:dark;--bg:#0e0820;--paper:#150c30;--card:#1c1140;--ink:#f4f0ff;--mute:#b4a9dc;--line:#2c1f5c;--link:#b997ff;--mark:#a57bff;--tint:#2a1a66;--face:#6403ee;--navbg:rgba(14,8,32,.82);--ph:#1f1446;--ph2:#3a2a78;--glow:rgba(140,80,255,.42);--grid:#120a2a}
+:root[data-theme=dark] .hero{background:radial-gradient(60% 80% at 80% 0%,rgba(3,238,216,.10),transparent 60%),radial-gradient(60% 80% at 10% 30%,rgba(217,3,238,.12),transparent 60%)}
+:root[data-theme=dark] .spec-glow{opacity:1}
+.theme{width:40px;height:40px;border-radius:10px;border:0;background:transparent;color:var(--ink);cursor:pointer;display:grid;place-items:center;flex:none;transition:background .24s}
+.theme:hover{background:var(--tint)}
+.theme svg{width:20px;height:20px;transition:transform .6s var(--sig)}
+:root[data-theme=dark] .theme svg{transform:rotate(180deg)}
+::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal}
+@font-face{font-family:"DesignPraise Sans";src:url(fonts/DesignPraiseSans.woff2) format("woff2");font-weight:1 1000;font-display:swap}
+@font-face{font-family:"Google Sans Code";src:url(fonts/GoogleSansCode.woff2) format("woff2");font-weight:300 800;font-display:swap}
+:root{color-scheme:light;--bg:#fff;--paper:#f7f5fc;--card:#fff;--ink:#1a0d3e;--mute:#5a5278;--line:#e8e3f3;--violet:#6403ee;--link:#6403ee;--mark:#6403ee;--tint:#f1ebff;--amber:#ffa800;--face:#1a0d3e;--navbg:rgba(255,255,255,.86);--ph:#efeaf8;--ph2:#d6cbef;--glow:rgba(165,123,255,.22);--grid:#fbfaff;
+--turn:375ms;--sig:cubic-bezier(.7,0,.2,1);--out:cubic-bezier(.16,1,.3,1);--sans:"DesignPraise Sans","Segoe UI",system-ui,sans-serif;--mono:"Google Sans Code",ui-monospace,Menlo,monospace}
+*{box-sizing:border-box;min-width:0}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 var(--sans);overflow-x:clip;-webkit-font-smoothing:antialiased}
+a{color:var(--link)}
+img,svg,canvas{display:block}
+.wrap{max-width:1200px;margin:0 auto}
+section{padding:clamp(72px,9vw,128px) max(5vw,20px);position:relative}
+section.paper{background:var(--paper)}
+h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.025em;line-height:1.1;text-wrap:balance}
+h2{font-size:clamp(30px,3.6vw,44px)}
+h3{font-size:20px;letter-spacing:-.015em;line-height:1.25}
+p{margin:0;max-width:62ch}
+.lead{font-size:clamp(18px,1.6vw,20px);color:var(--mute);line-height:1.55}
+.mute{color:var(--mute)}
+.mono{font-family:var(--mono);font-size:13px}
+.sec-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:16px 40px;margin-bottom:44px}
+.sec-head p{margin-top:12px}
+/* layer-turn heading reveal */
+.lt{perspective:900px;display:block}
+.lt>*{display:block;transform-origin:50% 100% -.4em;transform:rotateX(-90deg);opacity:0;transition:transform var(--turn) var(--sig),opacity var(--turn) var(--sig)}
+.lt.on>*{transform:none;opacity:1}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font:600 15px var(--sans);min-height:46px;padding:0 22px;border-radius:12px;border:0;background:var(--violet);color:#fff;cursor:pointer;text-decoration:none;transition:background .24s var(--out),box-shadow .24s var(--out),translate .3s var(--out);will-change:translate}
+.btn:hover{background:#5300c9;box-shadow:0 10px 24px -8px rgba(100,3,238,.5)}
+.btn.line{background:var(--card);color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--line)}
+.btn.line:hover{box-shadow:inset 0 0 0 1.5px var(--ink)}
+:root[data-theme=dark] .btn{box-shadow:0 0 0 1px rgba(165,123,255,.35)}:root[data-theme=dark] .btn:hover{background:#7a2bff;box-shadow:0 10px 30px -6px rgba(140,80,255,.7)}:root[data-theme=dark] .btn.line{box-shadow:inset 0 0 0 1.5px var(--line)}
+.btn.sm{min-height:38px;padding:0 14px;font-size:14px;border-radius:10px}
+.link{font-weight:600;text-decoration:none;color:var(--ink);border-bottom:1.5px solid var(--line);padding-bottom:2px;transition:border-color .24s}
+.link:hover{border-color:var(--violet)}
+.chip{all:unset;cursor:pointer;font:550 14px var(--sans);padding:7px 13px;border-radius:999px;background:var(--card);box-shadow:inset 0 0 0 1px var(--line);transition:background .24s var(--out),color .24s,box-shadow .24s;white-space:nowrap}
+.chip:hover{box-shadow:inset 0 0 0 1px var(--mute)}
+.chip[aria-pressed=true]{background:var(--face);color:#fff;box-shadow:none}
+:is(a,button,input,select,textarea,summary,.chip,[tabindex]):focus-visible{outline:2px solid var(--violet);outline-offset:3px}
+/* nav */
+nav{position:sticky;top:0;z-index:20;background:var(--navbg);backdrop-filter:blur(14px) saturate(1.3);border-bottom:1px solid transparent;transition:border-color .24s}
+nav.s{border-color:var(--line)}
+nav .in{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:26px;padding:14px max(5vw,20px)}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);font-weight:650;font-size:18px;letter-spacing:-.03em;margin-right:auto}
+.brand svg{color:var(--mark);width:20px;height:24px;transition:transform .6s var(--out)}
+.brand:hover svg{transform:rotate(-12deg) scale(1.1)}
+nav .links{display:flex;gap:24px}
+nav .links a{color:var(--mute);text-decoration:none;font-size:15px;font-weight:550;position:relative;transition:color .24s}
+nav .links a::after{content:"";position:absolute;left:0;right:0;bottom:-6px;height:2px;background:var(--violet);transform:scaleX(0);transform-origin:left;transition:transform .375s var(--sig)}
+nav .links a:hover,nav .links a.cur{color:var(--ink)}nav .links a:hover::after,nav .links a.cur::after{transform:none}
+.prog{width:20px;height:20px;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);gap:1.5px;padding:2px;border-radius:5px;background:#1a0d3e;box-shadow:0 0 0 1px var(--line);flex:none}
+.prog i{border-radius:1.5px;background:#3a2f55;transition:background .375s var(--sig)}
+.prog i.f{background:var(--c)}
+nav .btn{min-height:40px;padding:0 16px;font-size:14px}
+.menu{display:none;width:44px;height:44px;border:0;border-radius:10px;background:var(--paper);color:var(--ink);cursor:pointer;align-items:center;justify-content:center}
+@media(max-width:900px){nav .links{display:none}.menu{display:inline-flex}nav.open .in{flex-wrap:wrap}nav.open .links{display:flex;flex-direction:column;gap:4px;width:100%;order:9;padding-bottom:8px}nav.open .links a{padding:10px 0;font-size:17px}}
+@media(max-width:440px){nav .in>.btn{display:none}}
+/* hero */
+.hero{padding-top:clamp(28px,5vw,64px);padding-bottom:clamp(56px,7vw,96px);overflow:hidden}
+.hero .glow{position:absolute;width:720px;height:720px;left:0;top:0;border-radius:50%;background:radial-gradient(closest-side,var(--glow),transparent);pointer-events:none;translate:-50% -50%;transition:opacity .6s}
+.hero svg.mark{color:var(--mark);width:100%;height:auto;max-height:270px;position:relative;cursor:crosshair}
+.hero .copy{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:24px 64px;align-items:end;margin-top:clamp(28px,4vw,52px);padding-top:32px;border-top:1px solid var(--line);position:relative}
+.hero h1{font-size:clamp(28px,3.4vw,42px);font-weight:600;max-width:24ch}
+.hero .ctas{display:flex;flex-wrap:wrap;gap:12px;margin-top:24px}
+@media(max-width:820px){.hero .copy{grid-template-columns:1fr}}
+/* reel: a 3x3 face that turns between frames */
+.reel{margin-top:clamp(40px,6vw,72px);aspect-ratio:16/9;border-radius:20px;position:relative;background:#120a26;padding:4px;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);gap:4px;overflow:hidden}
+.cell{position:relative;perspective:1600px}
+.cb{position:absolute;inset:0;transform-style:preserve-3d}
+.cb .fa{position:absolute;inset:0;backface-visibility:hidden;background-size:300% 300%;border-radius:6px}
+.cb .fr{transform:translateZ(calc(var(--d)/2))}
+.cb .sd{transform:rotateY(90deg) translateZ(calc(var(--d)/2))}
+.cb .tp{transform:rotateX(-90deg) translateZ(calc(var(--d)/2))}
+.reel .ov{position:absolute;inset:auto 0 0 0;padding:20px 24px;display:flex;align-items:end;justify-content:space-between;gap:16px;background:linear-gradient(transparent,rgba(18,10,38,.75));color:#fff;pointer-events:none;border-radius:0 0 18px 18px}
+.reel .ov b{font-size:18px}
+.reel .ov span{font:500 12px var(--mono);color:#cfc6ea}
+.play{position:absolute;left:50%;top:50%;translate:-50% -50%;width:76px;height:76px;border-radius:50%;border:0;background:#fff;cursor:pointer;display:grid;place-items:center;box-shadow:0 12px 40px rgba(0,0,0,.35);transition:scale .3s var(--out);z-index:2}
+.play:hover{scale:1.07}
+.play::before{content:"";border-left:20px solid var(--violet);border-top:12px solid transparent;border-bottom:12px solid transparent;margin-left:6px}
+/* quarter-turn tiles (work, services, tools) */
+.qt{perspective:1400px}
+.qt .cub{position:relative;transform-style:preserve-3d;transition:transform var(--turn) var(--sig);transform:translateZ(calc(var(--hw,150px) * -1))}
+.qt .face{position:absolute;inset:0;backface-visibility:hidden;border-radius:14px;overflow:hidden}
+.qt .face.a{transform:translateZ(var(--hw,150px))}
+.qt .face.b{transform:rotateY(90deg) translateZ(var(--hw,150px))}
+.qt:is(:hover,:focus-within) .cub,.qt.turned .cub{transform:translateZ(calc(var(--hw,150px) * -1)) rotateY(-90deg)}
+@media(hover:none){.qt:is(:hover,:focus-within) .cub{transform:translateZ(calc(var(--hw,150px) * -1))}}
+/* work */
+.filters{display:flex;flex-wrap:wrap;gap:8px}
+.work{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:40px 24px}
+@media(max-width:900px){.work{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.work{grid-template-columns:1fr}}
+.case{all:unset;cursor:pointer;display:grid;gap:14px;transition:opacity .375s var(--sig),filter .375s var(--sig)}
+.case.dim{opacity:.18;filter:grayscale(1);pointer-events:none}
+.case .cub{aspect-ratio:4/3}
+.case .face.a{background:var(--paper)}
+.case .face.a>:is(img,svg){width:100%;height:100%;object-fit:cover}
+.case .face.b{background:var(--face);color:#fff;padding:22px;display:grid;align-content:space-between;gap:12px}
+.case .face.b p{font-size:15px;color:#d9d2f0}
+.case .face.b .mono{color:#a99ccf}
+.case h3{font-size:19px}
+.case .meta{font-size:15px;color:var(--mute);margin-top:4px}
+.soon{position:absolute;right:10px;top:10px;font:500 11px var(--mono);background:var(--card);color:var(--mute);padding:3px 8px;border-radius:6px}
+dialog{border:0;border-radius:20px;padding:0;width:min(820px,94vw);color:var(--ink);background:var(--card);box-shadow:0 30px 80px rgba(26,13,62,.25)}
+dialog[open]{animation:dlg .45s var(--out)}
+@keyframes dlg{from{opacity:0;transform:perspective(1200px) rotateX(-12deg) translateY(20px)}}
+dialog::backdrop{background:rgba(26,13,62,.4);backdrop-filter:blur(3px)}
+dialog .im{aspect-ratio:16/8;overflow:hidden;background:var(--paper)}
+dialog .im>:is(img,svg){width:100%;height:100%;object-fit:cover}
+dialog .body{padding:clamp(24px,4vw,40px);display:grid;gap:20px}
+dialog dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr));gap:16px;margin:0;padding-top:20px;border-top:1px solid var(--line)}
+dialog dt{font:500 12px var(--mono);color:var(--mute)}dialog dd{margin:2px 0 0;font-size:15px}
+dialog .x{position:absolute;top:12px;right:12px;width:40px;height:40px;border-radius:50%;border:0;background:var(--card);color:var(--ink);font-size:22px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.12);z-index:1}
+/* services */
+.svc{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+@media(max-width:900px){.svc{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.svc{grid-template-columns:1fr}}
+.svc .qt .cub{height:220px}
+.svc .face{padding:26px;display:grid;align-content:space-between;gap:12px}
+.svc .face.a{background:var(--card);box-shadow:inset 0 0 0 1px var(--line)}
+.svc .face.b{background:var(--violet);color:#fff}
+.svc .face.b ul{margin:0;padding:0;list-style:none;display:grid;gap:6px;font-size:15px}
+.svc .face.b li::before{content:"— ";color:#c9b6fb}
+.svc .ic{width:40px;height:40px;border-radius:10px;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);gap:2px;padding:4px;background:#1a0d3e}
+.svc .ic i{border-radius:2px;background:#3a2f55}
+.svc .ic i.on{background:var(--c)}
+.steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:32px;margin-top:28px;counter-reset:s}
+.steps div{border-top:2px solid var(--line);padding-top:18px;position:relative}
+.steps div::before{content:"";position:absolute;left:0;top:-2px;height:2px;width:0;background:var(--violet);transition:width .9s var(--sig)}
+.steps.on div::before{width:100%}
+.steps.on div:nth-child(2)::before{transition-delay:.25s}.steps.on div:nth-child(3)::before{transition-delay:.5s}.steps.on div:nth-child(4)::before{transition-delay:.75s}
+.steps p{margin-top:8px;color:var(--mute);font-size:16px}
+@media(max-width:900px){.steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.steps{grid-template-columns:1fr}}
+/* tools */
+.tools{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:28px}
+@media(max-width:900px){.tools{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.tools{grid-template-columns:1fr;gap:10px}.tool .cub{height:92px}.tool button.face{grid-template-columns:1fr auto;align-items:center;padding:14px 16px}}
+.tool .cub{height:170px}
+.tool button.face{all:unset;cursor:pointer;position:absolute;inset:0;backface-visibility:hidden;border-radius:14px;padding:18px;display:grid;align-content:space-between;gap:8px}
+.tool .face.a{background:var(--card);box-shadow:inset 0 0 0 1px var(--line)}
+.tool .face.b{background:var(--face);color:#fff}
+.tool.sel .face.a{box-shadow:inset 0 0 0 2px var(--violet)}
+.tool .ti{display:flex;gap:12px;align-items:center}
+.tool .ti img,.tool .ti svg{width:40px;height:40px;border-radius:10px;flex:none}
+.tool b{font-size:17px;display:block;line-height:1.2}
+.tool small{font-size:13px;color:var(--mute)}
+.tool .face.b small{color:#cfc6ea}
+.stage{background:var(--card);border-radius:20px;box-shadow:inset 0 0 0 1px var(--line),0 30px 60px -30px rgba(26,13,62,.25);padding:clamp(18px,3vw,32px);display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:clamp(20px,3vw,40px);align-items:start}
+.stage[hidden]{display:none}
+.stage.enter{animation:stg .5s var(--out)}
+@keyframes stg{from{opacity:0;transform:perspective(1400px) rotateY(-14deg) translateX(30px)}}
+@media(max-width:900px){.stage{grid-template-columns:1fr}}
+.stage .ptxt{display:grid;gap:16px;align-content:start}
+.stage h3{font-size:28px;letter-spacing:-.03em}
+.stage .tag{color:var(--mute);margin-top:2px}
+.facts{display:flex;flex-wrap:wrap;gap:6px 18px;font:500 13px var(--mono);color:var(--mute);padding:12px 0;border-block:1px solid var(--line)}
+.facts b{color:var(--ink);font-weight:500}
+.acts{display:flex;flex-wrap:wrap;gap:10px}
+.ctl{display:grid;gap:10px}
+.ctl .row{display:flex;flex-wrap:wrap;gap:6px}
+.ctl label.k{font:500 12px var(--mono);color:var(--mute)}
+.view{position:relative;border-radius:12px;overflow:hidden;background:#0b0b0e}
+.view img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;transition:opacity .375s var(--sig)}
+.note{font:500 12px var(--mono);color:var(--mute)}
+input[type=range]{width:100%;accent-color:var(--violet);height:30px}
+.sl{display:grid;grid-template-columns:80px 1fr 52px;gap:10px;align-items:center;font:500 12px var(--mono);color:var(--mute)}
+.sl output{color:var(--ink);text-align:right}
+.swatches{display:flex;flex-wrap:wrap;gap:8px}
+.swatches button{all:unset;cursor:pointer;width:30px;height:30px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);transition:transform .24s var(--out)}
+.swatches button:hover{transform:scale(1.12)}
+.swatches button[aria-pressed=true]{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--ink)}
+.pal{display:flex;height:34px;border-radius:8px;overflow:hidden}
+.pal button{all:unset;cursor:copy;flex:1;position:relative}
+.pal button:hover::after{content:attr(data-h);position:absolute;inset:auto 0 -22px 0;text-align:center;font:500 11px var(--mono);color:var(--mute)}
+.sides{display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:14px}
+.sides div{background:var(--paper);border-radius:10px;padding:10px 12px}
+.sides b{display:block;font:500 11px var(--mono);color:var(--mute);margin-bottom:2px}
+.read{display:grid;gap:8px;font-size:15px}
+.read .r{display:grid;grid-template-columns:110px 1fr;gap:10px}
+.read .r b{font:500 12px/1.9 var(--mono);color:var(--mute);font-weight:500}
+.ire{position:absolute;pointer-events:none;width:26px;height:26px;border:2px solid #fff;border-radius:50%;translate:-50% -50%;box-shadow:0 0 0 1px rgba(0,0,0,.4)}
+.wipe{position:absolute;inset:0;pointer-events:none}
+.wipe i{position:absolute;top:0;bottom:0;width:2px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.25)}
+.vers{display:grid;gap:8px;font-size:14px}
+.vers div{display:grid;grid-template-columns:44px 1fr;gap:10px}
+.vers b{font:500 13px/1.6 var(--mono);color:var(--violet)}
+.also{margin-top:40px;padding-top:22px;border-top:1px solid var(--line);font-size:16px;color:var(--mute)}
+/* about */
+.about{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:clamp(32px,6vw,96px);align-items:start}
+@media(max-width:860px){.about{grid-template-columns:1fr}}
+.portrait{aspect-ratio:4/5;border-radius:16px;background:linear-gradient(170deg,var(--tint),var(--ph2));position:relative;overflow:hidden}
+.portrait::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at var(--px,50%) var(--py,30%),color-mix(in srgb,var(--card) 55%,transparent),transparent 45%);transition:background .2s}
+.about .txt{display:grid;gap:18px}
+.vals{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.vals span{font-size:14px;font-weight:550;padding:6px 12px;border-radius:999px;background:var(--paper);transition:background .24s,color .24s}
+.vals span:hover{background:var(--face);color:#fff}
+.cv{display:grid;margin-top:6px}
+.cv div{display:grid;grid-template-columns:140px 1fr;gap:16px;padding:12px 0;border-top:1px solid var(--line);font-size:16px}
+.cv div:last-child{border-bottom:1px solid var(--line)}
+.cv b{font-weight:500;color:var(--mute);font-size:15px}
+/* instagram */
+.ig{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media(max-width:760px){.ig{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.ig .qt .cub{aspect-ratio:1}
+.ig .face.a img{width:100%;height:100%;object-fit:cover}
+.ig .face.b{background:var(--violet);color:#fff;display:grid;place-items:center;font-weight:600}
+/* faq + contact */
+.two{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:clamp(32px,6vw,96px);align-items:start}
+@media(max-width:860px){.two{grid-template-columns:1fr}}
+details{border-top:1px solid var(--line)}details:last-child{border-bottom:1px solid var(--line)}
+summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:16px;padding:20px 0;font-size:18px;font-weight:600;transition:color .24s}
+summary:hover{color:var(--violet)}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"";width:10px;height:10px;border-right:2px solid var(--mute);border-bottom:2px solid var(--mute);transform:rotate(45deg);margin:4px 4px 0 0;transition:transform .375s var(--sig);flex:none}
+details[open] summary::after{transform:rotate(225deg);margin-top:10px}
+details p{padding-bottom:20px;color:var(--mute);font-size:16px;animation:fd .375s var(--out)}
+@keyframes fd{from{opacity:0;transform:translateY(-6px)}}
+form{display:grid;gap:16px}
+.f2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media(max-width:560px){.f2{grid-template-columns:1fr}}
+label{display:grid;gap:6px;font-size:14px;font-weight:600}
+input:not([type=range]):not([type=file]):not([type=checkbox]),select,textarea{font:16px var(--sans);color:var(--ink);background:var(--card);border:1.5px solid var(--line);border-radius:10px;padding:12px 14px;min-height:48px;width:100%;transition:border-color .24s,box-shadow .24s}
+input:focus,select:focus,textarea:focus{border-color:var(--violet);box-shadow:0 0 0 4px var(--tint);outline:0}
+textarea{min-height:140px;resize:vertical}
+.types{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+@media(max-width:560px){.types{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.types label{position:relative;display:flex;align-items:center;justify-content:center;text-align:center;min-height:48px;padding:6px 8px;border-radius:10px;background:var(--card);border:1.5px solid var(--line);font-weight:550;cursor:pointer;transition:background .375s var(--sig),color .375s var(--sig),border-color .24s,transform .375s var(--sig)}
+.types label:hover{border-color:var(--mute)}
+.types input{position:absolute;opacity:0;width:1px;height:1px}
+.types label:has(input:checked){background:var(--face);color:#fff;border-color:var(--face);transform:perspective(500px) rotateX(360deg)}
+.types label:has(input:focus-visible){outline:2px solid var(--violet)}
+.contactlist{display:grid;margin-top:32px}
+.contactlist div{display:grid;grid-template-columns:110px 1fr;gap:12px;padding:12px 0;border-top:1px solid var(--line);font-size:16px}
+.contactlist b{font-weight:500;color:var(--mute);font-size:15px}
+.sent{display:none;padding:18px;border-radius:12px;background:var(--tint);font-size:15px}
+.sent.on{display:block;animation:fd .375s var(--out)}
+footer{border-top:1px solid var(--line);padding:48px max(5vw,20px) 36px}
+footer .wrap{display:grid;grid-template-columns:1.5fr repeat(3,1fr);gap:32px}
+@media(max-width:760px){footer .wrap{grid-template-columns:1fr 1fr}}
+footer h4{margin:0 0 12px;font-size:14px;font-weight:600;color:var(--mute)}
+footer ul{list-style:none;margin:0;padding:0;display:grid;gap:8px;font-size:15px}
+footer a{color:var(--ink);text-decoration:none}footer a:hover{color:var(--violet)}
+.legal{max-width:1200px;margin:40px auto 0;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;font-size:13px;color:var(--mute)}
+.cube{width:18px;height:18px;display:inline-grid;grid-template:repeat(3,1fr)/repeat(3,1fr);gap:1.5px;padding:1.5px;border-radius:4px;background:#1a0d3e;box-shadow:0 0 0 1px var(--line)}
+.cube i{border-radius:1.5px;background:var(--c);transition:background .375s var(--sig)}
+.cube:hover i{background:var(--violet)}
+.cube i:nth-child(n){transition-delay:calc(var(--n) * 40ms)}
+.rv{opacity:0;transform:translateY(18px);transition:opacity .6s var(--out),transform .6s var(--out)}
+.rv.on{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}.rv,.lt>*{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<filter id="c0"><feColorMatrix type="saturate" values="1"/></filter>
+<filter id="c1"><feComponentTransfer><feFuncR type="table" tableValues="0 .2 .52 .84 1"/><feFuncG type="table" tableValues="0 .17 .47 .78 .95"/><feFuncB type="table" tableValues=".01 .15 .4 .68 .84"/></feComponentTransfer></filter>
+<filter id="c2"><feColorMatrix type="saturate" values=".42"/><feComponentTransfer><feFuncR type="table" tableValues="0 .1 .45 .88 1"/><feFuncG type="table" tableValues="0 .1 .45 .88 1"/><feFuncB type="table" tableValues="0 .11 .46 .88 1"/></feComponentTransfer></filter>
+<filter id="c5"><feComponentTransfer><feFuncR type="table" tableValues="0 .2 .55 .92 1"/><feFuncG type="table" tableValues=".04 .26 .52 .8 .97"/><feFuncB type="table" tableValues=".1 .32 .5 .66 .82"/></feComponentTransfer></filter>
+<filter id="c13"><feColorMatrix type="saturate" values=".62"/><feComponentTransfer><feFuncR type="table" tableValues=".05 .22 .45 .72 .92"/><feFuncG type="table" tableValues=".06 .26 .5 .78 .96"/><feFuncB type="table" tableValues=".12 .34 .6 .86 1"/></feComponentTransfer></filter>
+<filter id="c7"><feColorMatrix type="saturate" values=".72"/><feComponentTransfer><feFuncR type="table" tableValues=".16 .38 .62 .86 1"/><feFuncG type="table" tableValues=".13 .34 .58 .82 .97"/><feFuncB type="table" tableValues=".14 .33 .55 .78 .93"/></feComponentTransfer></filter>
+<filter id="c4"><feColorMatrix type="matrix" values=".5 .38 .12 0 0 .5 .38 .12 0 0 .5 .38 .12 0 0 0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="0 .2 .5 .82 1"/><feFuncG type="table" tableValues="0 .2 .5 .82 1"/><feFuncB type="table" tableValues="0 .2 .5 .82 1"/></feComponentTransfer></filter>
+<filter id="c14"><feColorMatrix type="matrix" values=".5 .38 .12 0 .04 .4 .3 .1 0 .02 .25 .19 .06 0 0 0 0 0 1 0"/></filter>
+</svg>
+
+<nav id="nav" aria-label="Main"><div class="in">
+<a class="brand" href="#top" aria-label="DesignPraise Eric, home"><svg viewBox="-24 -10 296 320" class="mk1" aria-hidden="true"></svg>designpraise</a>
+<div class="links" id="links"><a href="#work">Work</a><a href="#services">Services</a><a href="#tools">Tools</a><a href="#about">About</a><a href="#contact">Contact</a></div>
+<button class="theme" id="theme" type="button" aria-label="Switch to night mode"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/><path d="M12 7.5a4.5 4.5 0 0 0 0 9z" fill="currentColor" stroke="none"/></svg></button><span class="prog" id="prog" aria-hidden="true"></span>
+<a class="btn mag" href="#contact">Start a project</a>
+<button class="menu" id="menu" aria-label="Menu" aria-expanded="false" aria-controls="links"><svg width="20" height="20" viewBox="0 0 20 20"><path d="M3 7h14M3 13h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+</div></nav>
+
+<section class="hero" id="top"><span class="glow" id="glow"></span><div class="wrap">
+<svg class="mark" id="heroMark" role="img" aria-label="DesignPraise Eric"></svg>
+<div class="copy">
+<span class="lt"><h1>Art direction, motion design and film for brands, educators and creative teams.</h1></span>
+<div class="rv">
+<p class="lead">I'm Divinepraise Eric, an art director and motion designer based in Lagos, working with teams worldwide on films, animation and brand systems.</p>
+<div class="ctas"><a class="btn mag" href="#contact">Start a project</a><a class="btn line mag" href="#work">View work</a></div>
+</div>
+</div>
+<div class="reel" id="reel" aria-label="Frames from recent work"><button class="play" type="button" aria-label="Play showreel"></button><div class="ov"><b>Showreel 2026</b><span id="reelCap"></span></div></div>
+</div></section>
+
+<section id="work" class="paper" data-p="1"><div class="wrap">
+<div class="sec-head"><div><span class="lt"><h2>Selected work</h2></span><p class="lead rv">Films, animation, and the identities and systems that keep them consistent.</p></div><div class="filters" id="filters" role="group" aria-label="Filter work"></div></div>
+<div class="work" id="workGrid"></div>
+</div></section>
+<dialog id="dlg" aria-labelledby="dT"><button class="x" id="dX" aria-label="Close">×</button><div class="im" id="dIm"></div><div class="body">
+<div><p class="mute" id="dMeta" style="font-size:15px"></p><h2 id="dT" style="margin-top:6px"></h2></div>
+<p id="dTxt" class="lead" style="font-size:18px"></p><dl id="dDl"></dl></div></dialog>
+
+<section id="services" data-p="2"><div class="wrap">
+<div class="sec-head"><div><span class="lt"><h2>Services</h2></span><p class="lead rv">From a single film to a full motion system and the templates that keep it consistent.</p></div></div>
+<div class="svc" id="svc"></div>
+<span class="lt" style="margin-top:88px"><h3 style="font-size:24px">Process</h3></span>
+<div class="steps" id="steps"></div>
+</div></section>
+
+<section id="tools" class="paper" data-p="3"><div class="wrap">
+<div class="sec-head"><div><span class="lt"><h2>Tools</h2></span><p class="lead rv">Software I build alongside client work, for filmmakers and motion designers. Try them here.</p></div><a class="link" href="https://github.com/designpraiseeric" target="_blank" rel="noopener">GitHub</a></div>
+<div class="tools" id="toolTiles"></div>
+<div id="stages"></div>
+<p class="also">In development: DockDocs and Notaeble, After Effects panels for documents and notes, and a bridge that lets AI assistants work inside After Effects.</p>
+</div></section>
+
+<section id="about" data-p="4"><div class="wrap about">
+<div class="portrait rv" id="portrait"><span class="soon">Portrait</span></div>
+<div class="txt">
+<span class="lt"><h2>About</h2></span>
+<p class="lead">I run DesignPraise Studio in Lagos. I direct and design motion, edit and finish films, animate in 2D and 3D, and write the scripts and plugins that make production faster.</p>
+<p class="mute">My background is in electronic engineering, so I approach creative work as a system: clear rules, reusable templates and tools that remove repetitive work. I also teach film production and mentor students through their short films.</p>
+<div class="vals" aria-label="Values"><span>Innovation</span><span>Discipline</span><span>Excellence</span><span>Adventure</span><span>Love</span><span>Service</span></div>
+<div class="cv">
+<div><b>Disciplines</b><span>Art direction, motion design, 2D and 3D animation, film and editing, colour, VFX</span></div>
+<div><b>Tools</b><span>After Effects, Premiere Pro, DaVinci Resolve, Blender, Illustrator, ExtendScript</span></div>
+<div><b>Education</b><span>Electronic engineering</span></div>
+<div><b>Teaching</b><span>Film instructor, short-film productions</span></div>
+</div>
+</div>
+</div></section>
+
+<section class="paper" style="padding-block:clamp(56px,7vw,96px)" data-p="5"><div class="wrap">
+<div class="sec-head" style="margin-bottom:28px"><span class="lt"><h2 style="font-size:clamp(24px,2.6vw,32px)">Instagram</h2></span><a class="link" href="https://www.instagram.com/designpraiseeric/" target="_blank" rel="noopener">@designpraiseeric</a></div>
+<div class="ig" id="ig"></div>
+</div></section>
+
+<section id="faq" data-p="6"><div class="wrap two">
+<div><span class="lt"><h2>Questions</h2></span><p class="lead rv" style="margin-top:12px">Anything else, ask in your enquiry.</p></div>
+<div id="faqList"></div>
+</div></section>
+
+<section id="contact" class="paper" data-p="7"><div class="wrap two">
+<div>
+<span class="lt"><h2>Start a project</h2></span>
+<p class="lead" style="margin-top:12px">Tell me about your project and timeline. I usually reply within two working days.</p>
+<div class="contactlist">
+<div><b>Email</b><span><a href="mailto:hello@designpraise.example">hello@designpraise.example</a></span></div>
+<div><b>WhatsApp</b><span>+234 000 000 0000</span></div>
+<div><b>Based in</b><span>Lagos, Nigeria (WAT, UTC+1)</span></div>
+</div>
+</div>
+<form id="brief" novalidate>
+<div class="f2"><label>Name<input id="fName" autocomplete="name" required></label><label>Email<input id="fEmail" type="email" autocomplete="email" required></label></div>
+<fieldset style="border:0;padding:0;margin:0;display:grid;gap:8px"><legend style="font-size:14px;font-weight:600;margin-bottom:8px">Project type</legend><div class="types" id="types"></div></fieldset>
+<div class="f2"><label>Budget<select id="fBudget"><option value="">Select</option><option>Under ₦500,000</option><option>₦500,000 – ₦2,000,000</option><option>₦2,000,000 – ₦5,000,000</option><option>Over ₦5,000,000</option><option>International (USD)</option><option>Not sure yet</option></select></label><label>Timeline<input id="fWhen" placeholder="e.g. by mid-January"></label></div>
+<label>Project details<textarea id="fMsg" required></textarea></label>
+<label style="display:none" aria-hidden="true">Leave empty<input type="checkbox" id="fBot" tabindex="-1"></label>
+<p id="err" role="alert" style="color:#b00049;font-size:14px"></p>
+<div><button class="btn mag" type="submit">Send enquiry</button></div>
+<div class="sent" id="sent" aria-live="polite">Your email app should open with the message ready to send. If it doesn't, email <a href="mailto:hello@designpraise.example">hello@designpraise.example</a> or <a id="waLink" href="#" target="_blank" rel="noopener">send it on WhatsApp</a>.</div>
+</form>
+</div></section>
+
+<footer><div class="wrap">
+<div><a class="brand" href="#top"><svg viewBox="-24 -10 296 320" class="mk1" aria-hidden="true"></svg>designpraise</a><p class="mute" style="font-size:15px;margin-top:12px">Art direction, motion design and film. Lagos, Nigeria.</p></div>
+<div><h4>Studio</h4><ul><li><a href="#work">Work</a></li><li><a href="#services">Services</a></li><li><a href="#about">About</a></li><li><a href="#contact">Contact</a></li></ul></div>
+<div><h4>Tools</h4><ul><li><a href="#tools" data-tool="0">Colored Lens</a></li><li><a href="#tools" data-tool="1">Lukuluku</a></li><li><a href="#tools" data-tool="2">Colored Lens Studio</a></li><li><a href="#tools" data-tool="3">Aline</a></li></ul></div>
+<div><h4>Elsewhere</h4><ul><li><a href="https://www.instagram.com/designpraiseeric/">Instagram</a></li><li><a href="https://www.behance.net/divinepraiseeric">Behance</a></li><li><a href="https://github.com/designpraiseeric">GitHub</a></li><li><a href="https://designpraiseeric.gumroad.com/">Gumroad</a></li></ul></div>
+</div>
+<div class="legal"><span>© <span id="yr">2026</span> DesignPraise Studio</span><span class="cube" id="fcube" aria-hidden="true"></span></div>
+</footer>
+
+<script>
+{
+const $=id=>document.getElementById(id),reduce=matchMedia('(prefers-reduced-motion: reduce)').matches,fine=matchMedia('(hover:hover)').matches;
+const ease=t=>{t=Math.min(1,Math.max(0,t));let a=0,b=1;for(let i=0;i<22;i++){const m=(a+b)/2,x=3*.7*m*(1-m)**2+3*.2*m*m*(1-m)+m**3;if(x<t)a=m;else b=m}const m=(a+b)/2;return 3*m*m*(1-m)+m**3};
+const TH={};const readTheme=()=>{const cs=getComputedStyle(document.documentElement);TH.ink=cs.getPropertyValue('--ink').trim();TH.mark=cs.getPropertyValue('--mark').trim();TH.mute=cs.getPropertyValue('--mute').trim();TH.card=cs.getPropertyValue('--card').trim();TH.link=cs.getPropertyValue('--link').trim()};readTheme();
+const HC={volt:'#03ee63',azure:'#038eee',violet:'#6403ee',aqua:'#03eed8',magenta:'#d903ee',sun:'#eed903',amber:'#ffa800'};
+/* ===== wave-Φ mark (Phase) ===== */
+const DP=window.DP={reduce};
+const PHI=(1+Math.sqrt(5))/2,r=46,cx=124,cy=150,h=r*PHI,w=r/PHI**3,g=w*PHI,sL=cx-g/2,sR=cx+g/2,dcx=sL-r,pcx=sR+r;
+const bez=(p0,c1,c2,p1,t)=>{const u=1-t;return [u*u*u*p0[0]+3*u*u*t*c1[0]+3*u*t*t*c2[0]+t*t*t*p1[0],u*u*u*p0[1]+3*u*u*t*c1[1]+3*u*t*t*c2[1]+t*t*t*p1[1]]};
+DP.geo=(sep=g,unf=0)=>{const sl=sL,sr=sL+sep,pc=sr+r,mid=(sl+sr)/2;
+const wave=(s,dx=0,dy=0)=>{const sh=.4*h,top=[sl,cy-sh],P=[];for(let i=0;i<=16;i++)P.push([sl,cy-sh*i/16]);const span=pc-sl,c1=[sl+dx*.3+unf*span*.12,cy-(h+.95*r)-dy-unf*18],c2=[sl+(.9-unf*.35)*span+dx,cy-r+dy*.15-unf*30],e=[pc,cy-r];for(let i=1;i<=70;i++)P.push(bez(top,c1,c2,e,i/70));
+const M=p=>s>0?p:[2*mid-p[0],2*cy-p[1]];return {P:P.map(M),n0:17}};
+const T2=[pc+r*Math.cos(2*Math.PI/3),cy+r*Math.sin(2*Math.PI/3)];return {wave,sl,sr,pc,pArc:`M${sr},${cy} A${r},${r} 0 1 1 ${T2[0].toFixed(2)},${T2[1].toFixed(2)}`}};
+DP.wave=(s,dx=0,dy=0)=>DP.geo().wave(s,dx,dy);
+DP.outline=({P,n0},ww=w)=>{const L=[],R=[];for(let i=0;i<P.length;i++){const a=P[Math.max(0,i-1)],b=P[Math.min(P.length-1,i+1)],tx=b[0]-a[0],ty=b[1]-a[1],l=Math.hypot(tx,ty)||1,nx=-ty/l,ny=tx/l,u=i<n0?0:(i-n0)/(P.length-1-n0),e=u*u*(3-2*u),wi=ww*(1-(1-1/PHI**2)*e)/2;L.push(P[i][0]+nx*wi,P[i][1]+ny*wi);R.push(P[i][0]-nx*wi,P[i][1]-ny*wi)}
+let d='M'+L[0].toFixed(1)+','+L[1].toFixed(1);for(let i=2;i<L.length;i+=2)d+='L'+L[i].toFixed(1)+','+L[i+1].toFixed(1);for(let i=R.length-2;i>=0;i-=2)d+='L'+R[i].toFixed(1)+','+R[i+1].toFixed(1);return d+'Z'};
+const A=(c,deg)=>[c+r*Math.cos(deg*Math.PI/180),cy+r*Math.sin(deg*Math.PI/180)],T1=A(dcx,300),T2=A(pcx,120);
+DP.dArc=`M${T1[0].toFixed(2)},${T1[1].toFixed(2)} A${r},${r} 0 1 0 ${sL},${cy}`;DP.pArc=`M${sR},${cy} A${r},${r} 0 1 1 ${T2[0].toFixed(2)},${T2[1].toFixed(2)}`;
+DP.markSVG=(ink,_,ww=w)=>`<path d="${DP.dArc}" fill="none" stroke="${ink}" stroke-width="${ww}" stroke-linecap="round"/><path d="${DP.pArc}" fill="none" stroke="${ink}" stroke-width="${ww}" stroke-linecap="round"/><path d="${DP.outline(DP.wave(1),ww)}" fill="${ink}"/><path d="${DP.outline(DP.wave(-1),ww)}" fill="${ink}"/>`;
+DP.centre=(n=420)=>{const pts=[],sweep=(c,d0,d1)=>{const n=Math.max(2,Math.round(Math.abs(d1-d0)/3));for(let i=0;i<=n;i++){const d=(d0+(d1-d0)*i/n)*Math.PI/180;pts.push([c+r*Math.cos(d),cy+r*Math.sin(d)])}};
+DP.wave(1).P.forEach(p=>pts.push(p));sweep(pcx,270,480);sweep(pcx,480,180);DP.wave(-1).P.forEach(p=>pts.push(p));sweep(dcx,90,300);sweep(dcx,300,0);
+const L=[0];for(let i=1;i<pts.length;i++)L.push(L[i-1]+Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]));const T=L[L.length-1],out=[];let j=0;for(let k=0;k<n;k++){const s=T*k/n;while(L[j+1]<s)j++;const f=(s-L[j])/(L[j+1]-L[j]||1);out.push([pts[j][0]+(pts[j+1][0]-pts[j][0])*f,pts[j][1]+(pts[j+1][1]-pts[j][1])*f])}return out};
+const centreD='M'+DP.centre().map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join('L');
+document.querySelectorAll('svg.mk1').forEach(s=>s.innerHTML=DP.markSVG('#6403ee','',w*1.5));
+
+
+const live=new Map(),vio=new IntersectionObserver(es=>es.forEach(e=>{const l=live.get(e.target);if(l)l.on=e.isIntersecting}),{rootMargin:'100px'});
+DP.loop=(el,f)=>{live.set(el,{f,on:true});vio.observe(el)};
+let t0=null,lastT=0;
+function tick(now){if(t0===null)t0=now;const t=(now-t0)/1000,dt=Math.min(.05,Math.max(0,t-lastT));lastT=t;live.forEach(l=>{if(l.on)l.f(t,dt)});requestAnimationFrame(tick)}
+
+/* ===== hero wordmark: draws, unfurls into "designpraise eric", holds, furls back; waves react to the pointer ===== */
+{const sv=$('heroMark'),VW=1200,VH=340,NS='http://www.w3.org/2000/svg',FS=180,BASE=cy+r+w/2;let col=TH.mark,mcol=TH.mute;
+sv.setAttribute('viewBox',`0 0 ${VW} ${VH}`);
+sv.innerHTML=`<defs><mask id="hm" maskUnits="userSpaceOnUse" x="-2000" y="-2000" width="6000" height="6000"><path class="mp" d="${centreD}" fill="none" stroke="#fff" stroke-width="${w*2.6}" stroke-linecap="round" stroke-linejoin="round" pathLength="1"/></mask></defs>
+<g class="all"><g class="mk"><path d="${DP.dArc}" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round"/><path class="rr" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round"/><path class="w1" fill="currentColor"/><path class="w2" fill="currentColor"/></g><g class="le"></g><g class="lr"></g><g class="lx"></g>
+<text class="ms" y="${BASE}" font-size="${FS}" style="font-family:var(--sans);font-weight:440;letter-spacing:-6px;visibility:hidden">esign</text><text class="ms2" y="${BASE}" font-size="${FS}" style="font-family:var(--sans);font-weight:440;letter-spacing:-6px;visibility:hidden">raise</text><text class="ms3" y="${BASE}" font-size="58" style="font-family:var(--sans);font-weight:500;visibility:hidden">eric</text>
+<rect class="dot" width="12" height="12" rx="2" fill="#ffa800"/></g>`;
+const q=c=>sv.querySelector('.'+c),all=q('all'),mk=q('mk'),rr=q('rr'),w1=q('w1'),w2=q('w2'),mp=q('mp'),dot=q('dot');
+let LE=[],LR=[],LX=[],we=0,wr=0,wx=0,ready=false,start=null;
+const build=(grp,meas,txt,size)=>{grp.innerHTML='';const out=[];for(let i=0;i<txt.length;i++){const x0=meas.getStartPositionOfChar(i).x,ex=meas.getExtentOfChar(i);const t=document.createElementNS(NS,'text');t.textContent=txt[i];t.setAttribute('y',BASE);t.setAttribute('font-size',size);t.style.fontFamily='var(--sans)';grp.appendChild(t);out.push({el:t,dx:x0,cw:ex.width})}return out};
+const meas=()=>{const a=q('ms'),b=q('ms2'),c=q('ms3');we=a.getComputedTextLength();wr=b.getComputedTextLength();wx=c.getComputedTextLength();LE=build(q('le'),a,'esign',FS);LR=build(q('lr'),b,'raise',FS);LX=build(q('lx'),c,'eric',58)};
+meas();document.fonts.ready.then(()=>{meas();ready=true;start=null});
+const S=[{x:0,y:0,vx:0,vy:0},{x:0,y:0,vx:0,vy:0}];let P=null,tf={sc:1,tx:0,ty:0};
+sv.addEventListener('pointermove',e=>{const b=sv.getBoundingClientRect(),X=(e.clientX-b.left)/b.width*VW,Y=(e.clientY-b.top)/b.height*VH;P=[(X-tf.tx)/tf.sc,(Y-tf.ty)/tf.sc]});sv.addEventListener('pointerleave',()=>P=null);
+const IO=x=>{x=Math.min(1,Math.max(0,x));return .5-.5*Math.cos(Math.PI*x)},IO3=x=>{x=Math.min(1,Math.max(0,x));return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const CP=DP.centre(),LOOP=16;
+DP.loop(sv,(t,dt)=>{if(!ready&&t<1.2)return;if(start===null)start=t;dt=Math.max(.001,dt||.016);const T=t-start,c=reduce?6:(T<LOOP?T:2.2+((T-2.2)%(LOOP-2.2)));
+const reveal=IO3(c/1.8),k=c<2.2?0:c<4.2?IO((c-2.2)/2):c<10.5?1:c<12.5?1-IO((c-10.5)/2):0;
+if(k<.001&&reveal<1){mp.style.strokeDasharray='1 1';mp.style.strokeDashoffset=(1-reveal).toFixed(4);mk.setAttribute('mask','url(#hm)')}else mk.removeAttribute('mask');
+const sep=g+k*(we+44+w),G=DP.geo(sep,k),mid=(G.sl+G.sr)/2;
+[[sL+12,cy-h-14],[2*mid-(sL+12),2*cy-(cy-h-14)]].forEach(([ax,ay],i)=>{let fx=0,fy=0;const s=i?-1:1;if(P&&k<.05){const dx=P[0]-ax,dy=P[1]-ay,d=Math.hypot(dx,dy);if(d<140){const f=(140-d)*9;fx=-dx/(d+1)*f*s;fy=-dy/(d+1)*f*s}}else fy=Math.sin(t*1.2+i*Math.PI)*70*(1-k);
+const st=S[i];st.vx+=(-170*st.x-18*st.vx+fx)*dt;st.vy+=(-170*st.y-18*st.vy+fy)*dt;st.x+=st.vx*dt;st.y+=st.vy*dt});
+rr.setAttribute('d',G.pArc);w1.setAttribute('d',DP.outline(G.wave(1,S[0].x*(1-k),S[0].y*(1-k))));w2.setAttribute('d',DP.outline(G.wave(-1,S[1].x*(1-k),S[1].y*(1-k))));
+const ex0=sL+w/2+22,rx0=G.pc+r+w/2+16;
+LE.forEach(L=>{const X=ex0+L.dx,a=Math.max(IO((G.sr-w-(X+L.cw*.25))/(L.cw*.9)),IO((k-.86)/.14));L.el.setAttribute('x',X.toFixed(2));L.el.setAttribute('fill','currentColor');L.el.style.fontWeight=Math.round(80+360*a);L.el.style.opacity=Math.min(1,a*1.6).toFixed(3);const sy=.25+.75*a,cxL=X+L.cw/2;L.el.setAttribute('transform',`translate(${cxL.toFixed(2)},${BASE}) scale(${(.85+.15*a).toFixed(3)},${sy.toFixed(3)}) translate(${(-cxL).toFixed(2)},${-BASE})`)});
+LR.forEach((L,i)=>{const a=IO((k-.44-i*.07)/.26),X=rx0+L.dx-(1-a)*22;L.el.setAttribute('x',X.toFixed(2));L.el.setAttribute('fill','currentColor');L.el.style.fontWeight=Math.round(80+360*a);L.el.style.opacity=Math.min(1,a*1.4).toFixed(3);const sy=.3+.7*a,cxL=X+L.cw/2;L.el.setAttribute('transform',`translate(${cxL.toFixed(2)},${BASE}) scale(${(.6+.4*a).toFixed(3)},${sy.toFixed(3)}) translate(${(-cxL).toFixed(2)},${-BASE})`)});
+const ex1=rx0+wr+28;LX.forEach((L,i)=>{const a=IO((k-.78-i*.03)/.13);L.el.setAttribute('x',(ex1+L.dx).toFixed(2));L.el.setAttribute('fill','var(--mute)');L.el.style.fill='var(--mute)';L.el.style.opacity=a.toFixed(3);L.el.setAttribute('transform',`translate(0,${((1-a)*14).toFixed(2)})`)});
+const left=dcx-r-w,kk=IO(k),right=(G.pc+r+w)*(1-kk)+(ex1+wx+8)*kk,wd=right-left,sc=Math.min(1.1,(VW-20)/wd);
+tf={sc,tx:(VW-wd*sc)/2-left*sc,ty:VH/2-cy*sc};all.setAttribute('transform',`translate(${tf.tx.toFixed(2)},${tf.ty.toFixed(2)}) scale(${sc.toFixed(5)})`);
+const u=(t*.1)%1,f=u*CP.length,i0=Math.floor(f)%CP.length,i1=(i0+1)%CP.length,fr=f-Math.floor(f),qx=CP[i0][0]+(CP[i1][0]-CP[i0][0])*fr,qy=CP[i0][1]+(CP[i1][1]-CP[i0][1])*fr;
+dot.setAttribute('x',(qx-6).toFixed(2));dot.setAttribute('y',(qy-6).toFixed(2));dot.setAttribute('transform',`rotate(45 ${qx.toFixed(2)} ${qy.toFixed(2)})`);dot.style.opacity=((1-Math.min(1,k*8))*reveal).toFixed(3)})}
+/* hero glow follows the pointer */
+{const hero=$('top'),gl=$('glow');let gx=.7,gy=.4,tx=.7,ty=.4;hero.addEventListener('pointermove',e=>{const b=hero.getBoundingClientRect();tx=(e.clientX-b.left)/b.width;ty=(e.clientY-b.top)/b.height});
+DP.loop(hero,()=>{gx+=(tx-gx)*.06;gy+=(ty-gy)*.06;gl.style.left=(gx*100)+'%';gl.style.top=(gy*100)+'%'})}
+
+/* ===== reel: a 3x3 face that turns rows and columns between frames ===== */
+{const reel=$('reel'),FR=[['img/hue-red.jpg','Colored Lens · Red'],['img/luku/L7_O4.jpg','Lukuluku · Rembrandt'],['img/frame-ctx-amber-urban.jpg','Colored Lens · Amber'],['img/hue-blue.jpg','Colored Lens · Blue'],['img/luku/L6_O1.jpg','Lukuluku · Neon'],['img/frame-ctx-teal-home.jpg','Colored Lens · Teal'],['img/hue-purple.jpg','Colored Lens · Purple'],['img/luku/L3_O6.jpg','Lukuluku · Naturalism'],['img/hue-green.jpg','Colored Lens · Green']];
+FR.forEach(f=>{const i=new Image();i.src=f[0]});
+let cur=0;const cells=[];
+for(let r0=0;r0<3;r0++)for(let c0=0;c0<3;c0++){const el=document.createElement('div');el.className='cell';el.innerHTML='<div class="cb"><div class="fa fr"></div><div class="fa sd"></div><div class="fa tp"></div></div>';reel.insertBefore(el,reel.querySelector('.ov'));cells.push({el,cb:el.firstChild,r:r0,c:c0})}
+const bg=(src,c)=>`url("${src}") ${c.c*50}% ${c.r*50}% / 300% 300%`;
+cells.forEach(c=>c.cb.querySelector('.fr').style.background=bg(FR[0][0],c));$('reelCap').textContent=FR[0][1];
+const size=()=>cells.forEach(c=>{c.w=c.el.offsetWidth;c.h=c.el.offsetHeight});const rro=new ResizeObserver(size);rro.observe(reel);size();
+const turnCell=(c,src,axis,dir,delay)=>setTimeout(()=>{const face=axis==='y'?'.sd':'.tp';c.cb.style.setProperty('--d',(axis==='y'?c.w:c.h)+'px');c.cb.querySelector(face).style.background=bg(src,c);
+c.cb.style.transition='none';c.cb.style.transform=`translateZ(${-(axis==='y'?c.w:c.h)/2}px)`;c.cb.offsetWidth;
+c.cb.style.transition=`transform var(--turn) var(--sig)`;c.cb.style.transform=`translateZ(${-(axis==='y'?c.w:c.h)/2}px) ${axis==='y'?'rotateY(-90deg)':'rotateX(90deg)'}`;
+setTimeout(()=>{c.cb.querySelector('.fr').style.background=bg(src,c);c.cb.style.transition='none';c.cb.style.transform='none'},400)},delay);
+let n=0;const step=()=>{if(document.hidden||reduce)return;cur=(cur+1)%FR.length;const src=FR[cur][0],byRow=n++%2===0,order=[0,1,2].sort(()=>Math.random()-.5);
+order.forEach((k,j)=>cells.filter(c=>(byRow?c.r:c.c)===k).forEach(c=>turnCell(c,src,byRow?'y':'x',1,j*170)));setTimeout(()=>$('reelCap').textContent=FR[cur][1],600)};
+let iv=null;new IntersectionObserver(es=>es.forEach(e=>{clearInterval(iv);if(e.isIntersecting)iv=setInterval(step,2600)})).observe(reel);
+reel.querySelector('.play').onclick=e=>{e.currentTarget.animate([{scale:1},{scale:.9},{scale:1}],{duration:300});$('reelCap').textContent='Showreel coming soon'}}
+
+/* ===== work ===== */
+const WORK=[
+{t:'Purple',c:'film',m:'Short film · Writer and director',art:'#6403ee',txt:'A short film in development: script, director’s treatment, storyboard and casting references.',dl:[['Status','In development'],['Role','Writer, director'],['Format','Short film'],['Stage','Treatment and storyboard']]},
+{t:'Aró',c:'film',m:'Short film · Director',art:'#ffa800',txt:'A short film in development, with a director’s treatment and visual references.',dl:[['Status','In development'],['Role','Director'],['Format','Short film'],['Stage','Treatment']]},
+{t:'Danfo',c:'film',m:'Short film · Writer, director and editor',art:'#eed903',txt:'A one-minute portrait of a Lagos morning on a danfo bus, written and directed shot by shot and graded as a single piece.',dl:[['Role','Writer, director, editor'],['Runtime','About 60 seconds'],['Tools','Video generation, DaVinci Resolve'],['Setting','Lagos']]},
+{t:'Little Saints',c:'anim',m:'Animated series · Direction and animation',art:'#03eed8',txt:'An animated children’s series introducing the foundations of the Christian faith in short episodes, with simple, readable characters and warm, physical motion.',dl:[['Client','DesignPraise Studio'],['Role','Direction, animation'],['Tools','Blender, After Effects'],['Format','Episodic series']]},
+{t:'Colour, re-staged',c:'film',m:'Still series · Art direction',img:'img/frame-psy-red.jpg',txt:'A series of frames illustrating the language of colour in film, each re-staged in a Nigerian setting with original characters. Made for Colored Lens.',dl:[['Client','Colored Lens'],['Role','Art direction, writing'],['Tools','Image generation, grading'],['Scope','Full encyclopedia']]},
+{t:'Summit opening film',c:'film',m:'Event film · Edit and titles',art:'#d903ee',txt:'An opening film for a corporate summit in Mauritius, cut to the structure of a commissioned score with titles timed to the music.',dl:[['Client','Corporate event'],['Role','Edit, titles, music brief'],['Tools','Premiere Pro, After Effects'],['Location','Mauritius']]},
+{t:'Beholding with Iyanu',c:'sys',m:'Identity and motion kit',art:'#a57bff',txt:'A calm, recognisable identity for a devotional YouTube channel, with a motion kit of intro, lower thirds, end screens and thumbnail templates.',dl:[['Client','Beholding with Iyanu'],['Role','Art direction, motion'],['Tools','Illustrator, After Effects'],['Deliverables','Identity, motion kit, templates']]},
+{t:'CHS224 lesson system',c:'sys',m:'Graphics system · Design and scripting',art:'#038eee',txt:'A lesson-video system for a university course: one After Effects template, driven by subtitle timing, places every title and overlay automatically across the series.',dl:[['Client','University course'],['Role','Design, scripting'],['Tools','After Effects, ExtendScript'],['Scope','48 episodes']]},
+{t:'Asaapu',c:'sys',m:'Brand identity · Art direction',art:'#03ee63',txt:'An identity proposal for a fintech product: a mark that holds at small sizes and a steady motion language for money in motion.',dl:[['Client','Asaapu'],['Role','Art direction'],['Tools','Illustrator, Figma, After Effects'],['Deliverables','Identity proposal and deck']]}
+];
+const CATS=[['all','All'],['film','Film'],['anim','Animation'],['sys','Identity and systems']];
+const ph=c=>`<svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="400" height="300" style="fill:var(--ph)"/><rect y="294" width="400" height="6" fill="${c}"/><g transform="translate(174 104) scale(.2)"><g style="color:var(--ph2)">${DP.markSVG('currentColor','',w*1.2)}</g></g></svg>`;
+const im=x=>x.img?`<img src="${x.img}" alt="" loading="lazy">`:ph(x.art);
+$('filters').innerHTML=CATS.map((c,i)=>`<button class="chip" type="button" data-c="${c[0]}" aria-pressed="${!i}">${c[1]}</button>`).join('');
+$('workGrid').innerHTML=WORK.map((x,i)=>`<button class="case rv" data-i="${i}" data-c="${x.c}"><div class="qt"><div class="cub"><div class="face a">${im(x)}${x.img?'':'<span class="soon">Image coming soon</span>'}</div><div class="face b"><span class="mono">${x.m}</span><p>${x.txt}</p><span style="font-weight:600">View project →</span></div></div></div><div><h3>${x.t}</h3><p class="meta">${x.m}</p></div></button>`).join('');
+$('filters').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;$('filters').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));document.querySelectorAll('.case').forEach(k=>k.classList.toggle('dim',b.dataset.c!=='all'&&k.dataset.c!==b.dataset.c))});
+const dlg=$('dlg');
+$('workGrid').addEventListener('click',e=>{const b=e.target.closest('.case');if(!b)return;const x=WORK[b.dataset.i];$('dIm').innerHTML=im(x);$('dMeta').textContent=x.m;$('dT').textContent=x.t;$('dTxt').textContent=x.txt;$('dDl').innerHTML=x.dl.map(d=>`<div><dt>${d[0]}</dt><dd>${d[1]}</dd></div>`).join('');dlg.showModal?dlg.showModal():dlg.setAttribute('open','')});
+$('dX').onclick=()=>dlg.close();dlg.addEventListener('click',e=>{if(e.target===dlg)dlg.close()});
+
+/* ===== services ===== */
+const SVC=[['Motion design','Explainers, product films, title sequences and social content.',['Product and app explainers','Title sequences','Social content systems'],'aqua',[4]],
+['Art direction and identity','Identities and motion systems, with guidelines and templates your team can use.',['Logos and lettermarks','Motion identity and guidelines','Templates and Essential Graphics'],'violet',[1,4]],
+['Film and video','Directing, editing and finishing for short films, documentaries, events and campaigns.',['Directing and scripting','Editing and story structure','Event and church media'],'magenta',[0,4,8]],
+['2D and 3D animation','Character and product animation, from concept to final render.',['Character animation','Product and object animation','Blender scenes and look development'],'azure',[3,4,5]],
+['Colour and VFX','Grading, compositing, tracking and clean-up.',['Look development and LUTs','Compositing and tracking','Clean-up and screen replacement'],'amber',[0,2,4,6,8]],
+['Tools and training','Custom After Effects and Premiere tools, and workshops for teams and students.',['Scripts, panels and plugins','Template pipelines','Workshops and courses'],'volt',[0,1,2,3,4,5,6,7,8]]];
+$('svc').innerHTML=SVC.map(s=>`<div class="qt rv" tabindex="0"><div class="cub"><div class="face a"><span class="ic" style="--c:${HC[s[3]]}">${[0,1,2,3,4,5,6,7,8].map(i=>`<i class="${s[4].includes(i)?'on':''}"></i>`).join('')}</span><div><h3>${s[0]}</h3><p class="mute" style="margin-top:6px;font-size:16px">${s[1]}</p></div></div><div class="face b"><h3>${s[0]}</h3><ul>${s[2].map(x=>`<li>${x}</li>`).join('')}</ul></div></div></div>`).join('');
+$('steps').innerHTML=[['Discovery','A short call about goals, audience, formats and deadline, followed by a written brief and quote.'],['Direction','Style frames and a motion test, so the look is agreed before production starts.'],['Production','Animation, editing or development, shared at agreed checkpoints with two rounds of revisions.'],['Delivery','Final files in every agreed format, with organised project files and templates.']].map(s=>`<div><h3>${s[0]}</h3><p>${s[1]}</p></div>`).join('');
+
+/* ===== tools ===== */
+const ICON_AL=`<svg viewBox="0 0 44 44" aria-hidden="true"><rect width="44" height="44" rx="10" fill="#03ee63"/><path d="M8 30 L36 14" stroke="#1a0d3e" stroke-width="2.5" stroke-linecap="round"/><g fill="#1a0d3e"><rect x="9" y="27" width="5" height="5" rx="1"/><rect x="18.5" y="21.5" width="5" height="5" rx="1"/><rect x="28" y="16" width="5" height="5" rx="1"/></g></svg>`;
+const TOOLS=[['Colored Lens','<img src="img/icon-colored-lens.png" alt="">','Colour in film, explained','Free · Web and Android'],['Lukuluku','<img src="img/icon-lukuluku.png" alt="">','A film look lab','Free · Web and Android'],['Colored Lens Studio','<img src="img/icon-cls.svg" alt="" style="background:#1d1d22;padding:5px">','Grading help inside your editor','Free · Premiere and Resolve'],['Aline','\u0000','Points to a line in After Effects','Pay what you want · Gumroad']];
+$('toolTiles').innerHTML=TOOLS.map((t,i)=>`<div class="tool qt rv" data-t="${i}"><div class="cub"><button type="button" class="face a" aria-label="Try ${t[0]}"><span class="ti">${t[1]==='\u0000'?ICON_AL:t[1]}<span><b>${t[0]}</b><small>${t[2]}</small></span></span><small>${t[3]}</small></button><button type="button" class="face b" tabindex="-1" aria-hidden="true"><b>${t[0]}</b><span style="font-weight:600">Try it →</span></button></div></div>`).join('');
+$('stages').innerHTML=`
+<div class="stage" id="st0" hidden>
+<div class="ctl"><div class="view" style="aspect-ratio:16/9"><img id="clImg" alt=""></div><div class="swatches" id="clSw" role="group" aria-label="Choose a hue"></div></div>
+<div class="ptxt"><div><h3>Colored Lens</h3><p class="tag">An encyclopedia of colour in film</p></div><div><p class="mono" id="clKw" style="color:var(--violet)"></p><p id="clS" style="margin-top:6px"></p></div><div class="sides"><div><b>Light side</b><span id="clL"></span></div><div><b>Dark side</b><span id="clD"></span></div></div><div><div class="pal" id="clPal"></div><p class="note" style="margin-top:8px" id="clCopy">Click a swatch to copy its hex.</p></div>
+<p class="mute" style="font-size:15px">13 hues, palette structures, narrative devices, 22 auteur signatures and 141 films, each illustrated with a frame re-staged in a Nigerian setting.</p>
+<div class="facts"><span>Platform <b>Web, Android</b></span><span>Price <b>Free</b></span></div>
+<div class="acts"><a class="btn mag" href="https://designpraiseeric.github.io/chroma-encyclopedia/" target="_blank" rel="noopener">Open Colored Lens</a><a class="btn line" href="https://github.com/designpraiseeric/chroma-encyclopedia/releases" target="_blank" rel="noopener">Android</a></div></div></div>
+<div class="stage" id="st1" hidden>
+<div class="ctl"><div class="view" id="lkView" style="aspect-ratio:2.39/1"><img id="lkA" alt=""><img id="lkB" alt="" style="opacity:0"></div>
+<label class="k">Lighting</label><div class="row" id="lkL"></div><label class="k">Lens</label><div class="row" id="lkO"></div><label class="k">Colour</label><div class="row" id="lkC"></div><label class="k">Aspect ratio</label><div class="row" id="lkA2"></div></div>
+<div class="ptxt"><div><h3>Lukuluku</h3><p class="tag">A film look lab</p></div><p class="mono" id="lkCode" style="color:var(--violet)"></p><div><b id="lkName"></b><p class="mute" id="lkRec" style="margin-top:4px;font-size:15px"></p><p class="note" id="lkRef" style="margin-top:6px"></p></div>
+<p class="mute" style="font-size:15px">Real Blender renders for each lighting and lens setup. The full app adds atmosphere, glass, 17 colour sciences, 11 film and video media, a full grade, LUT export and AI video prompts.</p>
+<div class="facts"><span>Platform <b>Web, Android</b></span><span>Price <b>Free</b></span></div>
+<div class="acts"><a class="btn mag" href="https://designpraiseeric.github.io/lukuluku/" target="_blank" rel="noopener">Open Lukuluku</a><a class="btn line" href="https://github.com/designpraiseeric/lukuluku/releases" target="_blank" rel="noopener">Android</a></div></div></div>
+<div class="stage" id="st2" hidden>
+<div class="ctl"><div class="view" id="clsView" style="aspect-ratio:16/9;cursor:crosshair"><img id="clsImg" alt="Frame being read"><img id="clsPrev" alt="" style="clip-path:inset(0 0 0 50%)"><div class="wipe" id="clsWipe" hidden><i style="left:50%"></i></div></div>
+<div class="row" id="clsPick"></div><label class="sl" id="clsWl" hidden>Wipe<input type="range" id="clsW" min="0" max="100" value="50"><output id="clsWo">50%</output></label></div>
+<div class="ptxt"><div><h3>Colored Lens Studio</h3><p class="tag">Grading help inside Premiere Pro and DaVinci Resolve</p></div>
+<div class="read" id="clsRead"></div><div class="pal" id="clsPal" style="height:22px"></div>
+<div><p class="note" style="margin-bottom:8px">Directions</p><div class="row" id="clsDir" style="display:flex;flex-wrap:wrap;gap:6px"></div></div>
+<p class="note">Click a face in the frame to check its exposure. A simplified in-browser version of the panel's Shot tab.</p>
+<div class="facts"><span>Hosts <b>Premiere Pro 25.6+, Resolve Studio 19+, web</b></span><span>Version <b>0.21.1</b></span><span>Price <b>Free</b></span></div>
+<div class="acts"><a class="btn mag" href="https://github.com/designpraiseeric/colored-lens-studio/releases" target="_blank" rel="noopener">Download</a><a class="btn line" href="https://designpraiseeric.github.io/colored-lens-studio/panel/" target="_blank" rel="noopener">Web version</a></div></div></div>
+<div class="stage" id="st3" hidden>
+<div class="ctl"><div class="view" style="background:var(--grid);box-shadow:inset 0 0 0 1px var(--line);height:clamp(260px,30vw,360px);background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:32px 32px"><canvas id="alCv" style="position:absolute;inset:0;width:100%;height:100%" aria-label="Path points animating into a straight line"></canvas></div>
+<label class="sl">Stagger<input type="range" id="alSt" min="0" max="12" value="5"><output id="alStO">5f</output></label>
+<label class="sl">Angle<input type="range" id="alAn" min="-45" max="45" value="-12"><output id="alAnO">-12°</output></label>
+<label class="sl">Bounce<input type="range" id="alBo" min="0" max="100" value="55"><output id="alBoO">55%</output></label>
+<div class="row"><button class="btn sm" type="button" id="alGo">Align to line</button><button class="btn sm line" type="button" id="alRe">Reset</button><button class="btn sm line" type="button" id="alNew">New path</button></div></div>
+<div class="ptxt"><div><h3>Aline</h3><p class="tag">Align points to a line in After Effects</p></div><p>Select vertices on a shape or mask path and animate them into a straight line, with stagger, easing and physics-based bounce. No manual keyframing.</p>
+<div class="vers"><div><b>2.1</b><span class="mute">Any line angle, custom reference point, chain and focal drift</span></div><div><b>2.0</b><span class="mute">Tensile fidelity and a single master physics control</span></div><div><b>1.0</b><span class="mute">Alignment, stagger, easing presets and chained nulls</span></div></div>
+<div class="facts"><span>Platform <b>After Effects, Windows and macOS</b></span><span>Price <b>Pay what you want</b></span></div>
+<div class="acts"><a class="btn mag" href="https://designpraiseeric.gumroad.com/l/aline" target="_blank" rel="noopener">Get Aline</a></div></div></div>`;
+let curTool=-1;const inits=[];
+const openTool=(i,scroll)=>{if(i===curTool)return;curTool=i;document.querySelectorAll('.tool').forEach(t=>{t.classList.toggle('sel',+t.dataset.t===i);t.classList.add('turned');setTimeout(()=>t.classList.remove('turned'),380)});
+[0,1,2,3].forEach(j=>{const s=$('st'+j);s.hidden=j!==i;if(j===i){s.classList.remove('enter');s.offsetWidth;s.classList.add('enter')}});if(inits[i]){inits[i]();inits[i]=null}if(i===3)alGo();if(scroll)$('st'+i).scrollIntoView({behavior:'smooth',block:'center'})};
+$('toolTiles').addEventListener('click',e=>{const t=e.target.closest('.tool');if(t)openTool(+t.dataset.t,innerWidth<900)});
+document.querySelectorAll('[data-tool]').forEach(a=>a.addEventListener('click',()=>openTool(+a.dataset.tool)));
+
+/* Colored Lens: hue explorer (content from the app) */
+const HUES=[{"n": "Red", "f": "red", "kw": "Passion · Violence · Danger · Power · Life", "s": "Red is the most visually dominant hue.", "light": "Love, desire, vitality, courage, celebration, luck and prosperity in Chinese visual culture.", "dark": "Violence, blood, danger, shame, rage, the infernal, ideological fervor.", "pal": ["#4a0008", "#8b0a1a", "#e31837", "#ff5a5f", "#1a0a0a"]}, {"n": "Orange", "f": "orange", "kw": "Warmth · Sociability · Nostalgia · Toxic Haze", "s": "Orange sits between red's aggression and yellow's unease.", "light": "Warmth, community, nostalgia, appetite, energy, the golden hour.", "dark": "Heat exhaustion, wasteland, toxicity, artificial sodium-lit cities, alarm.", "pal": ["#3d1600", "#8a3600", "#ff6a00", "#ffb070", "#f6e3c9"]}, {"n": "Yellow", "f": "yellow", "kw": "Madness · Sickness · Hazard · Hope", "s": "Everyday culture links yellow with sunshine and joy, and cinema often subverts that.", "light": "Optimism, innocence, sunlight, attention, hope against the odds.", "dark": "Illness, cowardice, betrayal, insanity, corruption, a toxic place.", "pal": ["#3a3000", "#8c7700", "#ffd100", "#f2e394", "#5b6e41"]}, {"n": "Green", "f": "green", "kw": "Nature · Corruption · Alienation · The Uncanny", "s": "Green has two personalities.", "light": "Life, growth, hope, healing, envy (in a playful sense), Islam and paradise in many visual traditions.", "dark": "Poison, rot, the inhuman, surveillance, envy, money and greed.", "pal": ["#06190a", "#125c1e", "#2ecc40", "#a3b19b", "#c9e265"]}, {"n": "Blue", "f": "blue", "kw": "Isolation · Melancholy · Cerebral · Night", "s": "Blue recedes from the eye, opening up space and distance.", "light": "Calm, trust, depth, spirituality, intellect, freedom (sky and sea).", "dark": "Loneliness, depression, coldness, clinical detachment, the uncanny night.", "pal": ["#020c1a", "#003566", "#0074d9", "#7fb3e0", "#c9d6df"]}, {"n": "Purple", "f": "purple", "kw": "Mysticism · Royalty · Illusion · The Erotic", "s": "Purple is rare in nature and was historically expensive to make (Tyrian purple).", "light": "Royalty, spirituality, imagination, luxury, mourning (in liturgical contexts).", "dark": "Decadence, artifice, intoxication, menace, death (in Patti Bellantoni's account).", "pal": ["#1a0026", "#4a004a", "#8a2be2", "#c77dff", "#ff4fd8"]}, {"n": "Pink", "f": "pink", "kw": "Innocence · Femininity · Artifice · Subversion", "s": "Pastel pink carries tenderness, childhood, romance and sweetness.", "light": "Tenderness, play, femininity, self-acceptance, joy, queer celebration.", "dark": "Infantilization, artifice, consumer fantasy, a gilded cage.", "pal": ["#3d0a22", "#c2185b", "#ff1493", "#f4b6c2", "#ffe4e1"]}, {"n": "Amber", "f": "amber", "kw": "Memory · Age · Wealth · Earth", "s": "Brown and amber come from the older stages of film history: sepia toning, candle and tungsten light, earth, wood and old paper.", "light": "Nostalgia, warmth, tradition, wisdom, prosperity, the sacred.", "dark": "Stagnation, decay, corruption, greed, a parched and dead world.", "pal": ["#1f1408", "#5c3d16", "#b8860b", "#e0b15c", "#efe1c6"]}, {"n": "Teal", "f": "teal", "kw": "Technology · Cold Modernity · The Sea", "s": "Teal and cyan carry the mood of glass, screens, oceans and the twenty-first century.", "light": "Clarity, freshness, the sea, futurism, calm intelligence.", "dark": "Sterility, corporate coldness, digital alienation, a cliché when overused.", "pal": ["#021a1a", "#0b4f5c", "#00b3b3", "#7ee8e0", "#e8a87c"]}, {"n": "White", "f": "white", "kw": "Purity · Sterility · Death · Transcendence", "s": "White is purity, innocence and light in much Western iconography.", "light": "Purity, peace, divinity, new beginnings, clarity.", "dark": "Sterility, control, emptiness, the clinical, death and mourning.", "pal": ["#ffffff", "#f5f5f0", "#dcdcd2", "#b8c4c8", "#8a8f93"]}, {"n": "Black", "f": "black", "kw": "Void · Power · Mourning · Elegance", "s": "Black is absence, the unknown, death and evil, and also authority, formality and sophistication.", "light": "Elegance, authority, mystery, rest, solemnity.", "dark": "Evil, despair, nihilism, the void, moral absence.", "pal": ["#000000", "#0a0a0c", "#1e1e24", "#3f3f46", "#71717a"]}, {"n": "Grey", "f": "grey", "kw": "Realism · War · Exhaustion · Moral Ambiguity", "s": "Desaturation drains a scene of vitality.", "light": "Seriousness, honesty, documentary truth, restraint.", "dark": "Bleakness, exhaustion, numbness, a world without hope.", "pal": ["#1a1a1a", "#4a4a4a", "#7a7a7a", "#a8a8a0", "#d6d6cf"]}, {"n": "Black & white", "f": "bw", "kw": "Memory · Truth · Timelessness · Abstraction", "s": "Since color became the default, choosing black and white is a statement.", "light": "Timelessness, documentary authority, elegance, memory, moral clarity.", "dark": "Distance, austerity, death, an objective world without warmth.", "pal": ["#000000", "#3a3a3a", "#7d7d7d", "#c0c0c0", "#ffffff"]}];
+inits[0]=()=>{const img=$('clImg');const sh=i=>{const h=HUES[i];img.style.opacity=0;setTimeout(()=>{img.src=`img/hue-${h.f}.jpg`;img.alt=`${h.n}: illustrative frame from Colored Lens`;img.onload=()=>img.style.opacity=1},200);
+$('clKw').textContent=h.n+' · '+h.kw;$('clS').textContent=h.s;$('clL').textContent=h.light;$('clD').textContent=h.dark;
+$('clPal').innerHTML=h.pal.map(c=>`<button type="button" style="background:${c}" data-h="${c}" aria-label="Copy ${c}"></button>`).join('');
+$('clSw').querySelectorAll('button').forEach((b,j)=>b.setAttribute('aria-pressed',j===i))};
+$('clSw').innerHTML=HUES.map((h,i)=>`<button type="button" style="background:${h.n==='Black & white'?'linear-gradient(90deg,#000 50%,#fff 50%)':h.pal[2]}" aria-label="${h.n}" title="${h.n}"></button>`).join('');
+$('clSw').addEventListener('click',e=>{const b=e.target.closest('button');if(b)sh([...$('clSw').children].indexOf(b))});
+$('clPal').addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;try{await navigator.clipboard.writeText(b.dataset.h);$('clCopy').textContent=`Copied ${b.dataset.h}`}catch(_){$('clCopy').textContent=b.dataset.h}});sh(0)};
+
+/* Lukuluku: real renders, live colour looks and aspect */
+const LIT=[[1,'High-key','Large soft key 30° off axis, fill 1.5:1, background +1.5 stops, soft hair light.','Commercial portraiture; The Grand Budapest Hotel interiors'],[7,'Rembrandt','Key 45° side and 35° high (triangle of light on the far cheek), fill about 4:1, back light, modest background.','Classic Hollywood studio portraiture; George Hurrell'],[3,'Naturalism','Window-sized daylight source from the side, 3:1 bounce fill, warm practical in background.','Emmanuel Lubezki, The Tree of Life; Roger Deakins interiors'],[9,'Fluorescent','Two overhead tubes, soft and flat, slightly green; institutional and unflattering.','Harris Savides, Zodiac'],[10,'Candle','A single small warm source low and close; nothing else lights the frame.','John Alcott, Barry Lyndon'],[2,'Chiaroscuro','Small semi-hard key 70° side, no fill, ratio of 8:1 or more, background falls to black.','John Alton, The Big Combo; Caravaggio'],[4,'Top-light','Single hard source overhead, slightly forward; eye sockets fall into shadow; no fill.','Gordon Willis, The Godfather'],[8,'Moonlight','Hard cool source high and behind to one side, faint blue fill, deep shadows.','John Seale, Mad Max: Fury Road'],[11,'Underlight','Source below the face pointing up; unnatural, menacing.','German Expressionism; classic horror'],[5,'Silhouette','Subject unlit from the front against a bright background, hard rim from behind.','Vittorio Storaro, Apocalypse Now'],[6,'Neon','Magenta key one side, cyan rim the other, low ambient.','Newton Thomas Sigel, Drive; Christopher Doyle, Chungking Express']];
+const LENS=[[1,'40mm'],[4,'Anamorphic'],[6,'85mm T1.4']];
+const LOOKS=[['c0','Neutral',0],['c1','Print film',1],['c2','Bleach bypass',2],['c5','Teal & orange',5],['c13','Cold blue',13],['c7','Pastel',7],['c4','Mono',4],['c14','Silent tint',14]];
+const AR=[['2.39',2.39],['1.85',1.85],['16:9',16/9],['1.33',4/3]];
+inits[1]=()=>{let L=1,O=1,Cc=0,A=0,front='lkA';
+const chips=(id,arr,get,set,lab)=>{$(id).innerHTML=arr.map((x,i)=>`<button type="button" class="chip" aria-pressed="${i===get()}">${lab(x)}</button>`).join('');$(id).onclick=e=>{const b=e.target.closest('button');if(!b)return;const i=[...$(id).children].indexOf(b);set(i);[...$(id).children].forEach((c,j)=>c.setAttribute('aria-pressed',j===i));upd()}};
+chips('lkL',LIT,()=>L,v=>L=v,x=>x[1]);chips('lkO',LENS,()=>O,v=>O=v,x=>x[1]);chips('lkC',LOOKS,()=>Cc,v=>Cc=v,x=>x[1]);chips('lkA2',AR,()=>A,v=>A=v,x=>x[0]);
+const upd=()=>{const src=`img/luku/L${LIT[L][0]}_O${LENS[O][0]}.jpg`,back=front==='lkA'?'lkB':'lkA',bi=$(back),fi=$(front);
+const f=`url(#${LOOKS[Cc][0]})`;fi.style.filter=f;bi.style.filter=f;
+if(!fi.src.endsWith(src)){bi.onload=()=>{bi.style.opacity=1;fi.style.opacity=0;front=back};bi.src=src}
+$('lkView').style.aspectRatio=AR[A][1];$('lkView').style.transition='aspect-ratio .375s var(--sig)';
+$('lkCode').textContent=`L${LIT[L][0]}·O${LENS[O][0]}·C${LOOKS[Cc][2]}·${AR[A][0]}`;$('lkName').textContent=LIT[L][1];$('lkRec').textContent=LIT[L][2];$('lkRef').textContent=LIT[L][3]};
+$('lkA').src=`img/luku/L7_O4.jpg`;upd()};
+
+/* Colored Lens Studio: read a frame (real pixel analysis) */
+const FAM=[['Red',0],['Orange',25],['Yellow',52],['Green',110],['Teal',180],['Blue',220],['Purple',272],['Pink',318]];
+const famOf=(hh,s,v)=>{if(hh>=345||hh<12)return 'Red';if(hh<40)return v<.55&&s<.75?'Amber':'Orange';if(hh<68)return 'Yellow';if(hh<160)return 'Green';if(hh<200)return 'Teal';if(hh<255)return 'Blue';if(hh<295)return 'Purple';return 'Pink'};
+const RING=['Red','Orange','Amber','Yellow','Green','Teal','Blue','Purple','Pink'];
+const SAMPLES=[['img/frame-ctx-amber-urban.jpg','Scrapyard'],['img/frame-ctx-teal-home.jpg','Laptop'],['img/frame-ctx-purple-sacred.jpg','Chapel'],['img/hue-red.jpg','Red room']];
+let lastData=null,lastW=0,lastH=0;
+const analyse=src=>new Promise(res=>{const im2=new Image();im2.onload=()=>{const W=160,H=Math.round(160*im2.height/im2.width),cv=document.createElement('canvas');cv.width=W;cv.height=H;const x=cv.getContext('2d',{willReadFrequently:true});x.drawImage(im2,0,0,W,H);const d=x.getImageData(0,0,W,H).data;lastData=d;lastW=W;lastH=H;
+let n=0,Ls=0,Ss=0,warm=0,lit=0;const fam={},px=[];
+for(let i=0;i<d.length;i+=4){const r=d[i]/255,g=d[i+1]/255,b=d[i+2]/255,mx=Math.max(r,g,b),mn=Math.min(r,g,b),Y=.2126*r+.7152*g+.0722*b,s=mx?(mx-mn)/mx:0;n++;Ls+=Y;Ss+=s;warm+=r-b;if((i/4)%3===0)px.push([d[i],d[i+1],d[i+2]]);
+if(s>.18&&mx>.12&&Y<.97){let hh;if(mx===r)hh=((g-b)/(mx-mn)+6)%6;else if(mx===g)hh=(b-r)/(mx-mn)+2;else hh=(r-g)/(mx-mn)+4;hh*=60;const f=famOf(hh,s,mx);fam[f]=(fam[f]||0)+1;lit++}}
+const Lm=Ls/n,Sm=Ss/n,Wm=warm/n;const fs=Object.entries(fam).sort((a,b)=>b[1]-a[1]);const top=fs[0],share=top?Math.round(top[1]/Math.max(1,lit)*100):0;
+const big=fs.filter(f=>f[1]/Math.max(1,lit)>.12).map(f=>f[0]);let struct='monochromatic';if(big.length>=2){const ia=RING.indexOf(big[0]),ib=RING.indexOf(big[1]),dd=Math.min(Math.abs(ia-ib),9-Math.abs(ia-ib));struct=dd<=2?'analogous':dd>=4?'complementary':'split'}if(lit<n*.08)struct='near-neutral';
+let C=[];for(let k=0;k<6;k++)C.push(px[Math.floor(k/6*px.length)].slice());for(let it=0;it<8;it++){const acc=C.map(()=>[0,0,0,0]);px.forEach(p=>{let bi=0,bd=1e9;C.forEach((c,j)=>{const dd=(p[0]-c[0])**2+(p[1]-c[1])**2+(p[2]-c[2])**2;if(dd<bd){bd=dd;bi=j}});const a=acc[bi];a[0]+=p[0];a[1]+=p[1];a[2]+=p[2];a[3]++});acc.forEach((a,j)=>{if(a[3])C[j]=[a[0]/a[3],a[1]/a[3],a[2]/a[3],a[3]]})}
+C=C.filter(c=>c[3]).sort((a,b)=>(.2126*a[0]+.7152*a[1]+.0722*a[2])-(.2126*b[0]+.7152*b[1]+.0722*b[2]));
+res({key:Lm<.28?'Low-key':Lm>.55?'High-key':'Mid-key',temp:Wm>.05?'warm':Wm<-.03?'cool':'neutral',sat:Sm<.28?'muted':Sm>.5?'vivid':'moderate',top:top?top[0]:'—',share,struct,C,Wm,Sm,Lm})};im2.src=src});
+const dirsFor=a=>{const D=[];if(a.temp==='warm')D.push(['c1','Print film','Lean into the warmth with dense blacks']);if(a.temp==='cool')D.push(['c13','Cold blue','Commit to the cool, lift the blacks']);if(a.temp==='neutral')D.push(['c5','Teal & orange','Separate skin from the background']);
+if(a.sat==='muted'||a.key==='Low-key')D.push(['c2','Bleach bypass','Harder contrast, silvery highlights']);else D.push(['c7','Pastel','Soften contrast and saturation']);D.push(a.temp==='warm'?['c14','Silent tint','Collapse to a warm monochrome']:['c4','Mono','Strip colour to study light']);return D.slice(0,3)};
+inits[2]=()=>{const img=$('clsImg'),pv=$('clsPrev'),view=$('clsView');let dot=null;
+const run=async src=>{img.src=src;pv.src=src;pv.style.display='none';$('clsWipe').hidden=true;$('clsWl').hidden=true;if(dot){dot.remove();dot=null}
+$('clsRead').innerHTML='<p class="note">Reading the frame…</p>';const a=await analyse(src);
+$('clsRead').innerHTML=`<div class="r"><b>Frame</b><span>${a.key}, ${a.temp}, ${a.sat}</span></div><div class="r"><b>Leads</b><span>${a.top} (${a.share}% of the lit picture)</span></div><div class="r"><b>Structure</b><span>${a.struct[0].toUpperCase()+a.struct.slice(1)}</span></div><div class="r"><b>Skin</b><span id="clsSkin" class="mute">Click a face</span></div>`;
+const tot=a.C.reduce((s,c)=>s+c[3],0);$('clsPal').innerHTML=a.C.map(c=>`<span style="flex:${c[3]/tot};background:rgb(${c[0]|0},${c[1]|0},${c[2]|0})"></span>`).join('');
+$('clsDir').innerHTML=dirsFor(a).map(d=>`<button class="chip" type="button" data-f="${d[0]}" title="${d[2]}">${d[1]}</button>`).join('')+'<button class="chip" type="button" data-f="">Original</button>'};
+$('clsPick').innerHTML=SAMPLES.map((s,i)=>`<button class="chip" type="button" data-i="${i}" aria-pressed="${!i}">${s[1]}</button>`).join('')+'<label class="chip" style="cursor:pointer">Your frame<input type="file" accept="image/*" id="clsFile" style="position:absolute;opacity:0;width:1px;height:1px"></label>';
+$('clsPick').onclick=e=>{const b=e.target.closest('button');if(!b)return;$('clsPick').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));run(SAMPLES[b.dataset.i][0])};
+$('clsFile').onchange=e=>{const f=e.target.files[0];if(f){$('clsPick').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',false));run(URL.createObjectURL(f))}};
+$('clsDir').onclick=e=>{const b=e.target.closest('button');if(!b)return;$('clsDir').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));if(!b.dataset.f){pv.style.display='none';$('clsWipe').hidden=true;$('clsWl').hidden=true;return}pv.style.display='block';pv.style.filter=`url(#${b.dataset.f})`;$('clsWipe').hidden=false;$('clsWl').hidden=false;setW($('clsW').value)};
+const setW=v=>{pv.style.clipPath=`inset(0 0 0 ${v}%)`;$('clsWipe').firstChild.style.left=v+'%';$('clsWo').textContent=v+'%'};$('clsW').oninput=e=>setW(e.target.value);
+view.addEventListener('click',e=>{if(!lastData)return;const b=view.getBoundingClientRect(),fx=(e.clientX-b.left)/b.width,fy=(e.clientY-b.top)/b.height,X=Math.round(fx*lastW),Y=Math.round(fy*lastH);let s=0,k=0;
+for(let dy=-3;dy<=3;dy++)for(let dx=-3;dx<=3;dx++){const xx=Math.min(lastW-1,Math.max(0,X+dx)),yy=Math.min(lastH-1,Math.max(0,Y+dy)),i=(yy*lastW+xx)*4;s+=.2126*lastData[i]+.7152*lastData[i+1]+.0722*lastData[i+2];k++}
+const ire=Math.round(s/k/255*100);if(!dot){dot=document.createElement('span');dot.className='ire';view.appendChild(dot)}dot.style.left=fx*100+'%';dot.style.top=fy*100+'%';
+const v=ire<40?`${ire} IRE · underexposed for skin`:ire>75?`${ire} IRE · too hot for skin`:`${ire} IRE · within 40–75`;const sk=$('clsSkin');if(sk){sk.textContent=v;sk.className=ire<40||ire>75?'':'mute';sk.style.color=ire<40||ire>75?'#b06f00':''}});
+run(SAMPLES[0][0])};
+
+/* Aline */
+let alGo=()=>{};
+{const cv=$('alCv'),st=$('alSt'),an=$('alAn'),bo=$('alBo');let W=0,H=0,ctx,pts=[],t0a=null,mode='path',seed=7;
+const rnd=()=>{seed=(seed*9301+49297)%233280;return seed/233280};
+const newPath=()=>{const n=11;pts=Array.from({length:n},(_,i)=>{const u=i/(n-1);return {x:.1+.8*u+(rnd()-.5)*.06,y:.5+Math.sin(u*Math.PI*2+rnd()*2)*.28*(rnd()*.6+.5)}});mode='path';t0a=null};
+const size=()=>{const b=cv.getBoundingClientRect(),d=Math.min(2,devicePixelRatio||1);W=b.width;H=b.height;cv.width=W*d;cv.height=H*d;ctx=cv.getContext('2d');ctx.setTransform(d,0,0,d,0,0)};
+const ro=new ResizeObserver(size);ro.observe(cv);newPath();
+const sync=()=>{$('alStO').textContent=st.value+'f';$('alAnO').textContent=an.value+'°';$('alBoO').textContent=bo.value+'%'};[st,an,bo].forEach(x=>x.addEventListener('input',()=>{sync();if(mode!=='path')t0a=performance.now()/1000-3}));sync();
+alGo=()=>{mode='align';t0a=performance.now()/1000+.3};$('alGo').onclick=alGo;$('alRe').onclick=()=>{mode='path';t0a=null};$('alNew').onclick=()=>{seed=Math.floor(Math.random()*9999);newPath();setTimeout(alGo,250)};
+DP.loop(cv,()=>{if(!W)return;const now=performance.now()/1000,P=pts.map(p=>[p.x*W,p.y*H]);
+let L=0;for(let i=1;i<P.length;i++)L+=Math.hypot(P[i][0]-P[i-1][0],P[i][1]-P[i-1][1]);L=Math.min(L,W*.84);
+const ang=an.value*Math.PI/180,ca=Math.cos(ang),sa=Math.sin(ang),c0=[W/2,H/2],stg=st.value/24,amp=bo.value/100;
+const tgt=P.map((p,i)=>{const s=(i/(P.length-1))*L-L/2;return [c0[0]+ca*s,c0[1]+sa*s]});
+const cur=P.map((p,i)=>{if(mode==='path'||t0a===null)return [p[0]+Math.sin(now*1.3+i)*2,p[1]+Math.cos(now*1.1+i*1.7)*2];const tt=now-t0a-i*stg,dur=.48,k=reduce?1:Math.max(0,Math.min(1,tt/dur)),e=ease(k);let x=p[0]+(tgt[i][0]-p[0])*e,y=p[1]+(tgt[i][1]-p[1])*e;
+if(tt>dur&&!reduce){const tau=tt-dur,o=amp*18*Math.exp(-tau*5)*Math.sin(tau*16);x+=-sa*o;y+=ca*o}return [x,y]});
+ctx.clearRect(0,0,W,H);
+if(mode==='align'){ctx.strokeStyle=TH.mark;ctx.globalAlpha=.35;ctx.setLineDash([4,6]);ctx.beginPath();ctx.moveTo(tgt[0][0]-ca*30,tgt[0][1]-sa*30);ctx.lineTo(tgt[tgt.length-1][0]+ca*30,tgt[tgt.length-1][1]+sa*30);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1}
+ctx.strokeStyle=TH.ink;ctx.lineWidth=3;ctx.lineJoin='round';ctx.beginPath();cur.forEach((p,i)=>{if(!i)ctx.moveTo(p[0],p[1]);else{const q=cur[i-1];ctx.quadraticCurveTo(q[0],q[1],(q[0]+p[0])/2,(q[1]+p[1])/2);if(i===cur.length-1)ctx.lineTo(p[0],p[1])}});ctx.stroke();
+cur.forEach((p,i)=>{ctx.fillStyle=i===0||i===cur.length-1?TH.mark:TH.card;ctx.strokeStyle=TH.mark;ctx.lineWidth=2;ctx.beginPath();ctx.rect(p[0]-5,p[1]-5,10,10);ctx.fill();ctx.stroke()});
+if(mode==='align'){ctx.save();ctx.translate(c0[0],c0[1]);ctx.rotate(Math.PI/4);ctx.fillStyle='#ffa800';ctx.fillRect(-6,-6,12,12);ctx.restore()}})}
+const tio=new IntersectionObserver(es=>{if(es[0].isIntersecting){openTool(0);tio.disconnect()}},{threshold:.15});tio.observe($('toolTiles'));
+
+/* instagram */
+$('ig').innerHTML=['img/frame-ctx-amber-urban.jpg','img/luku/L6_O1.jpg','img/frame-ctx-teal-home.jpg','img/hue-purple.jpg'].map(s=>`<a class="qt rv" href="https://www.instagram.com/designpraiseeric/" target="_blank" rel="noopener" aria-label="Instagram post"><div class="cub"><div class="face a"><img src="${s}" alt="" loading="lazy"></div><div class="face b">View on Instagram</div></div></a>`).join('');
+
+/* faq */
+$('faqList').innerHTML=[['How much does a project cost?','Every project is quoted individually after a short call, based on length, complexity and deadline. You receive a fixed quote and a written brief before any work starts.'],['How long does a project take?','A 30 to 60 second film usually takes two to four weeks from approved brief to delivery. Larger projects are planned in milestones.'],['Do you work with clients outside Nigeria?','Yes. I work remotely with clients in any time zone and can invoice in naira or US dollars.'],['How does payment work?','A deposit confirms the booking and the balance is due on delivery. Larger projects are paid by milestone.'],['Will I receive the project files?','Yes. You receive organised project files and any templates created for you.'],['Can you build a custom tool for my team?','Yes. I build After Effects scripts and panels, Premiere and Resolve plugins, and template pipelines for repetitive work.']].map(f=>`<details><summary>${f[0]}</summary><p>${f[1]}</p></details>`).join('');
+
+/* contact */
+$('types').innerHTML=['Film or video','Animation','Motion design','Brand identity','Motion system','Colour or VFX','Custom tool','Training','Other'].map(t=>`<label><input type="checkbox" value="${t}">${t}</label>`).join('');
+/* CONTACT SETTINGS: paste your Web3Forms access key, email and WhatsApp number here */
+const WEB3FORMS_KEY='',EMAIL='hello@designpraise.example',WA='2340000000000';
+$('brief').addEventListener('submit',async e=>{e.preventDefault();const n=$('fName').value.trim(),em=$('fEmail').value.trim(),m=$('fMsg').value.trim();
+if($('fBot').checked)return;
+if(!n||!/^\S+@\S+\.\S+$/.test(em)||!m){$('err').textContent='Please add your name, a valid email and some project details.';return}$('err').textContent='';
+const types=[...document.querySelectorAll('#types input:checked')].map(i=>i.value).join(', ')||'-';
+const body=`Name: ${n}\nEmail: ${em}\nProject type: ${types}\nBudget: ${$('fBudget').value||'-'}\nTimeline: ${$('fWhen').value.trim()||'-'}\n\n${m}`;
+const btn=e.submitter||$('brief').querySelector('button[type=submit]');$('waLink').href=`https://wa.me/${WA}?text=${encodeURIComponent(body)}`;
+const fallback=()=>{$('sent').innerHTML=`Your email app should open with the message ready to send. If it doesn't, email <a href="mailto:${EMAIL}">${EMAIL}</a> or <a href="https://wa.me/${WA}?text=${encodeURIComponent(body)}" target="_blank" rel="noopener">send it on WhatsApp</a>.`;$('sent').classList.add('on');location.href=`mailto:${EMAIL}?subject=${encodeURIComponent('Project enquiry from '+n)}&body=${encodeURIComponent(body)}`};
+if(!WEB3FORMS_KEY){fallback();return}
+btn.disabled=true;btn.textContent='Sending…';
+try{const fd=new FormData();fd.append('access_key',WEB3FORMS_KEY);fd.append('subject','Project enquiry from '+n);fd.append('from_name','designpraise website');fd.append('name',n);fd.append('email',em);fd.append('project_type',types);fd.append('budget',$('fBudget').value||'-');fd.append('timeline',$('fWhen').value.trim()||'-');fd.append('message',m);
+const r=await fetch('https://api.web3forms.com/submit',{method:'POST',body:fd,headers:{Accept:'application/json'}});const j=await r.json();if(!r.ok||!j.success)throw new Error(j.message||'failed');
+$('sent').innerHTML=`<b>Thanks, ${n.split(' ')[0]}.</b> Your enquiry has been sent. I'll reply to ${em} within two working days.`;$('sent').classList.add('on');$('brief').querySelectorAll('input:not([type=checkbox]),textarea,select').forEach(x=>x.value='');document.querySelectorAll('#types input').forEach(x=>x.checked=false);btn.textContent='Sent'}
+catch(err){btn.disabled=false;btn.textContent='Send enquiry';fallback()}});
+
+/* nav: scroll progress fills a 3x3, current section underline */
+{const pr=$('prog'),cols=['#03ee63','#038eee','#6403ee','#03eed8','#d903ee','#eed903','#ffa800','#a57bff','#6403ee'];pr.innerHTML=cols.map(c=>`<i style="--c:${c}"></i>`).join('');const is=[...pr.children];
+const links=[...document.querySelectorAll('#links a')];
+const onS=()=>{const p=scrollY/Math.max(1,document.documentElement.scrollHeight-innerHeight),k=Math.round(p*9);is.forEach((i,j)=>i.classList.toggle('f',j<k));$('nav').classList.toggle('s',scrollY>8);
+let curId='';document.querySelectorAll('section[id]').forEach(s=>{if(s.getBoundingClientRect().top<innerHeight*.4)curId=s.id});links.forEach(a=>a.classList.toggle('cur',a.getAttribute('href')==='#'+curId))};
+addEventListener('scroll',onS,{passive:true});onS()}
+
+/* magnetic buttons, portrait light, quarter-turn sizes */
+if(fine&&!reduce){document.addEventListener('pointermove',e=>{const b=e.target.closest&&e.target.closest('.mag');document.querySelectorAll('.mag.pulled').forEach(x=>{if(x!==b){x.style.translate='';x.classList.remove('pulled')}});if(!b)return;const r2=b.getBoundingClientRect();b.style.translate=`${((e.clientX-r2.left)/r2.width-.5)*8}px ${((e.clientY-r2.top)/r2.height-.5)*6}px`;b.classList.add('pulled')})}
+$('portrait').addEventListener('pointermove',e=>{const b=e.currentTarget.getBoundingClientRect();e.currentTarget.style.setProperty('--px',(e.clientX-b.left)/b.width*100+'%');e.currentTarget.style.setProperty('--py',(e.clientY-b.top)/b.height*100+'%')});
+const setHW=()=>document.querySelectorAll('.qt').forEach(q=>q.style.setProperty('--hw',q.offsetWidth/2+'px'));const hro=new ResizeObserver(setHW);document.querySelectorAll('.work,.svc,.tools,.ig').forEach(g=>hro.observe(g));setHW();
+
+/* night / day */
+{const btn=$('theme'),root=document.documentElement;const lab=()=>btn.setAttribute('aria-label',root.dataset.theme==='dark'?'Switch to day mode':'Switch to night mode');lab();
+btn.onclick=e=>{const next=root.dataset.theme==='dark'?'light':'dark';const apply=()=>{root.dataset.theme=next;try{localStorage.setItem('dp-theme',next)}catch(_){}readTheme();lab()};
+if(document.startViewTransition&&!reduce){const b=btn.getBoundingClientRect(),x=b.left+b.width/2,y=b.top+b.height/2,R2=Math.hypot(Math.max(x,innerWidth-x),Math.max(y,innerHeight-y));
+document.startViewTransition(apply).ready.then(()=>document.documentElement.animate({clipPath:[`circle(0px at ${x}px ${y}px)`,`circle(${R2}px at ${x}px ${y}px)`]},{duration:700,easing:'cubic-bezier(.7,0,.2,1)',pseudoElement:'::view-transition-new(root)'}))}else apply()};
+try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',e=>{if(!localStorage.getItem('dp-theme')){root.dataset.theme=e.matches?'dark':'light';readTheme();lab()}})}catch(_){}}
+
+/* footer cube */
+$('fcube').innerHTML=['#03ee63','#038eee','#eed903','#d903ee','#6403ee','#03eed8','#eed903','#03ee63','#d903ee'].map((c,i)=>`<i style="--c:${c};--n:${i}"></i>`).join('');
+
+/* reveal */
+document.querySelectorAll('svg.mk1').forEach(s=>s.innerHTML=DP.markSVG('currentColor','',w*1.5));
+$('yr').textContent=new Date().getFullYear();
+$('menu').onclick=()=>{const o=$('nav').classList.toggle('open');$('menu').setAttribute('aria-expanded',o)};
+$('links').addEventListener('click',e=>{if(e.target.tagName==='A'){$('nav').classList.remove('open');$('menu').setAttribute('aria-expanded','false')}});
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){const el=e.target;const sib=el.parentElement?[...el.parentElement.children].filter(c=>c.classList.contains('rv')):[];const k=Math.max(0,sib.indexOf(el));el.style.transitionDelay=(k%3)*90+'ms';el.classList.add('on');io.unobserve(el)}}),{threshold:.12});
+document.querySelectorAll('.rv,.lt,.steps').forEach(el=>io.observe(el));
+requestAnimationFrame(tick);
+}
+</script>
+</body>
+</html>
