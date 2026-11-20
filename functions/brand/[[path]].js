@@ -51,16 +51,24 @@ async function sessionOk(env, request) {
   if (!exp || !sig || Number(exp) < Date.now()) return false;
   return same(sig, await sign(env, 'session:' + exp + ':' + env.BRAND_PASSWORD));
 }
-async function openVault(env, request, name) {
-  const res = await env.ASSETS.fetch(new URL('/vault/' + name, request.url));
-  if (!res.ok) throw new Error('vault file missing: ' + name);
+const TYPES = { html: 'text/html; charset=utf-8', css: 'text/css; charset=utf-8', js: 'text/javascript; charset=utf-8',
+  json: 'application/json; charset=utf-8', md: 'text/markdown; charset=utf-8', txt: 'text/plain; charset=utf-8',
+  jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', svg: 'image/svg+xml', woff2: 'font/woff2', ttf: 'font/ttf', zip: 'application/zip' };
+
+async function vaultName(path) {
+  const h = new Uint8Array(await crypto.subtle.digest('SHA-256', enc.encode('dp-vault:' + path)));
+  return [...h.slice(0, 16)].map(b => b.toString(16).padStart(2, '0')).join('') + '.bin';
+}
+// Returns the decrypted file, or null if there is no such file.
+async function openVault(env, request, path) {
+  const res = await env.ASSETS.fetch(new URL('/vault/' + (await vaultName(path)), request.url));
+  if (!res.ok) return null;
   const data = new Uint8Array(await res.arrayBuffer());
+  if (data.length < 29) return null; // not an encrypted file (e.g. a fallback page)
   const key = await crypto.subtle.importKey('raw', b64ToBytes(env.BRAND_KEY), 'AES-GCM', false, ['decrypt']);
-  return crypto.subtle.decrypt(
-    { name: 'AES-GCM', iv: data.slice(0, 12), additionalData: enc.encode(name) },
-    key,
-    data.slice(12)
-  );
+  try {
+    return await crypto.subtle.decrypt({ name: 'AES-GCM', iv: data.slice(0, 12), additionalData: enc.encode(path) }, key, data.slice(12));
+  } catch { return null; }
 }
 function html(body, status = 200, extra = {}) {
   return new Response(body, { status, headers: { 'Content-Type': 'text/html; charset=utf-8', 'X-Frame-Options': 'DENY', ...SECURITY, ...extra } });
@@ -91,10 +99,6 @@ ${error ? '<p>That password is not right.</p>' : ''}
 </form></body></html>`;
 }
 
-const TOOLBAR = `<div id="dp-private-bar" style="position:fixed;right:16px;bottom:16px;z-index:2147483647;display:flex;gap:8px;font:600 13px/1 system-ui,sans-serif">
-<a href="/brand/download" style="padding:10px 14px;border-radius:9999px;background:#a57bff;color:#1a0d3e;text-decoration:none">Download</a>
-<a href="/brand/logout" style="padding:10px 14px;border-radius:9999px;background:#251552;color:#fff;text-decoration:none">Sign out</a></div>`;
-
 export async function onRequest({ request, env }) {
   if (!env.BRAND_KEY || !env.BRAND_PASSWORD) return html('Not configured', 503);
 
@@ -103,10 +107,9 @@ export async function onRequest({ request, env }) {
 
   if (path === '') return Response.redirect(url.origin + '/brand/', 302);
 
-  // Fonts are already public on the main site; reuse them.
-  if (path.startsWith('/fonts/') && request.method === 'GET') {
-    return env.ASSETS.fetch(new URL(path, url.origin));
-  }
+  // The brand fonts are already public on the main site; reuse them.
+  const font = path.match(/(?:^|\/)fonts\/(DesignPraiseSans|GoogleSansCode)\.woff2$/);
+  if (font && request.method === 'GET') return env.ASSETS.fetch(new URL('/fonts/' + font[1] + '.woff2', url.origin));
 
   if (path === '/logout') {
     return new Response(null, { status: 302, headers: { Location: '/brand/', 'Set-Cookie': `${COOKIE}=; Path=/brand; Max-Age=0; HttpOnly; Secure; SameSite=Strict`, ...SECURITY } });
@@ -125,20 +128,21 @@ export async function onRequest({ request, env }) {
   }
 
   const authed = await sessionOk(env, request);
-
-  if (path === '/') {
-    if (!authed) return html(loginPage(false), 401);
-    const page = new TextDecoder().decode(await openVault(env, request, 'book.bin'));
-    return html(page.replace(/<\/body>/i, TOOLBAR + '</body>'), 200, { 'X-Frame-Options': 'SAMEORIGIN' });
+  if (!authed) {
+    if (path === '/') return html(loginPage(false), 401);
+    return Response.redirect(url.origin + '/brand/', 302);
   }
 
-  if (path === '/download') {
-    if (!authed) return Response.redirect(url.origin + '/brand/', 302);
-    return new Response(await openVault(env, request, 'pack.bin'), { headers: {
-      'Content-Type': 'application/zip',
-      'Content-Disposition': 'attachment; filename="DesignPraiseEric-BrandIdentity.zip"',
-      ...SECURITY } });
-  }
+  let file;
+  try { file = decodeURIComponent(path.slice(1)); } catch { file = ''; }
+  if (file === '' || file.endsWith('/')) file += 'index.html';
+  if (file.split('/').some(seg => seg === '..' || seg === '.')) return new Response('Not found', { status: 404, headers: SECURITY });
 
-  return new Response('Not found', { status: 404, headers: SECURITY });
+  const body = await openVault(env, request, file);
+  if (!body) return new Response('Not found', { status: 404, headers: SECURITY });
+
+  const ext = (file.match(/\.([a-z0-9]+)$/i) || [])[1]?.toLowerCase();
+  const headers = { 'Content-Type': TYPES[ext] || 'application/octet-stream', 'X-Frame-Options': 'SAMEORIGIN', ...SECURITY };
+  if (ext === 'zip' || ext === 'ttf') headers['Content-Disposition'] = `attachment; filename="${file.split('/').pop()}"`;
+  return new Response(body, { headers });
 }
