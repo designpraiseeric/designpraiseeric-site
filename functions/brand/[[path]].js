@@ -70,6 +70,22 @@ async function openVault(env, request, path) {
     return await crypto.subtle.decrypt({ name: 'AES-GCM', iv: data.slice(0, 12), additionalData: enc.encode(path) }, key, data.slice(12));
   } catch { return null; }
 }
+// Preferred source: the private GitHub repo itself, so every push shows up here.
+// Needs GITHUB_TOKEN (fine-grained, read-only Contents on designpraiseeric-brand-private).
+const REPO = 'designpraiseeric/designpraiseeric-brand-private';
+async function openRepo(env, path) {
+  const enc = path.split('/').map(encodeURIComponent).join('/');
+  const res = await fetch(`https://api.github.com/repos/${REPO}/contents/${enc}?ref=main`, {
+    headers: { Authorization: 'Bearer ' + env.GITHUB_TOKEN, Accept: 'application/vnd.github.raw+json',
+      'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'designpraiseeric-brand' },
+    cf: { cacheTtl: 0 },
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error('GitHub ' + res.status);
+  if ((res.headers.get('Content-Type') || '').includes('application/json') && !path.endsWith('.json')) return null; // a folder, not a file
+  return res.body;
+}
+
 function html(body, status = 200, extra = {}) {
   return new Response(body, { status, headers: { 'Content-Type': 'text/html; charset=utf-8', 'X-Frame-Options': 'DENY', ...SECURITY, ...extra } });
 }
@@ -138,7 +154,9 @@ export async function onRequest({ request, env }) {
   if (file === '' || file.endsWith('/')) file += 'index.html';
   if (file.split('/').some(seg => seg === '..' || seg === '.')) return new Response('Not found', { status: 404, headers: SECURITY });
 
-  const body = await openVault(env, request, file);
+  let body;
+  try { body = env.GITHUB_TOKEN ? await openRepo(env, file) : await openVault(env, request, file); }
+  catch { return new Response('The brand archive is unavailable right now.', { status: 502, headers: SECURITY }); }
   if (!body) return new Response('Not found', { status: 404, headers: SECURITY });
 
   const ext = (file.match(/\.([a-z0-9]+)$/i) || [])[1]?.toLowerCase();
