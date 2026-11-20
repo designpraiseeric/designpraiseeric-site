@@ -20,3 +20,9 @@ Without a key, the form falls back to opening the visitor's email app.
 - Work images: set `img:'img/your-frame.jpg'` on each entry in `WORK`
 - Loglines for Purple and Aró in `WORK`
 - The site opens in night mode; the sun/moon button switches to day and remembers the visitor's choice.
+
+## Private brand area (/brand)
+`/brand` is for the owner only. It asks for a password, then shows the animated brand book with a Download button for the full identity pack.
+- `vault/*.bin` are AES-256-GCM encrypted. They are unreadable without `BRAND_KEY`, which lives only in Cloudflare.
+- `functions/brand/[[path]].js` checks the password and decrypts on the server. `functions/vault/` hides the encrypted files from direct requests.
+- To change the password: Cloudflare dashboard → Workers & Pages → designpraiseeric → Settings → Variables and secrets → edit `BRAND_PASSWORD`, then redeploy. Changing it signs out every session.
