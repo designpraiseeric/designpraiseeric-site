@@ -19,3 +19,4 @@ Without a key, the form falls back to opening the visitor's email app.
 - Portrait in About
 - Work images: set `img:'img/your-frame.jpg'` on each entry in `WORK`
 - Loglines for Purple and Aró in `WORK`
+- The site opens in night mode; the sun/moon button switches to day and remembers the visitor's choice.

@@ -7,9 +7,9 @@
 <meta name="description" content="Divinepraise Eric is a Lagos-based art director and motion designer working on films, animation and brand systems, and the maker of Colored Lens, Lukuluku, Colored Lens Studio and Aline.">
 <meta property="og:title" content="DesignPraise Eric — Art direction, motion design and film">
 <meta property="og:type" content="website">
-<meta name="theme-color" content="#ffffff">
+<meta name="theme-color" content="#0e0820">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
-<script>try{const t=localStorage.getItem("dp-theme")||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>try{let t="dark";try{t=localStorage.getItem("dp-theme")||"dark"}catch(e){}document.documentElement.dataset.theme=t}catch(e){document.documentElement.dataset.theme="dark"}</script>
 <style>
 /* VOICE: a professional studio site that moves — plain words, lively surfaces
    IDEA: everything behaves like a 3x3 cube: tiles turn a quarter, headings arrive as a layer turn, the reel is a face that turns row by row
@@ -667,7 +667,7 @@ const setHW=()=>document.querySelectorAll('.qt').forEach(q=>q.style.setProperty(
 btn.onclick=e=>{const next=root.dataset.theme==='dark'?'light':'dark';const apply=()=>{root.dataset.theme=next;try{localStorage.setItem('dp-theme',next)}catch(_){}readTheme();lab()};
 if(document.startViewTransition&&!reduce){const b=btn.getBoundingClientRect(),x=b.left+b.width/2,y=b.top+b.height/2,R2=Math.hypot(Math.max(x,innerWidth-x),Math.max(y,innerHeight-y));
 document.startViewTransition(apply).ready.then(()=>document.documentElement.animate({clipPath:[`circle(0px at ${x}px ${y}px)`,`circle(${R2}px at ${x}px ${y}px)`]},{duration:700,easing:'cubic-bezier(.7,0,.2,1)',pseudoElement:'::view-transition-new(root)'}))}else apply()};
-try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',e=>{if(!localStorage.getItem('dp-theme')){root.dataset.theme=e.matches?'dark':'light';readTheme();lab()}})}catch(_){}}
+}
 
 /* footer cube */
 $('fcube').innerHTML=['#03ee63','#038eee','#eed903','#d903ee','#6403ee','#03eed8','#eed903','#03ee63','#d903ee'].map((c,i)=>`<i style="--c:${c};--n:${i}"></i>`).join('');
