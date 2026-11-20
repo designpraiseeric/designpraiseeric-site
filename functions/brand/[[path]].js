@@ -124,6 +124,12 @@ export async function onRequest({ request, env }) {
   if (path === '') return Response.redirect(url.origin + '/brand/', 302);
 
   // The brand fonts are already public on the main site; reuse them.
+  // Health check (no content): is the live repo source reachable?
+  if (path === '/health') {
+    let ok = false, source = env.GITHUB_TOKEN ? 'repo' : 'vault';
+    try { ok = env.GITHUB_TOKEN ? !!(await openRepo(env, 'CHANGELOG.md')) : !!(await openVault(env, request, 'index.html')); } catch {}
+    return new Response(JSON.stringify({ source, ok }), { status: ok ? 200 : 503, headers: { 'Content-Type': 'application/json', ...SECURITY } });
+  }
   const font = path.match(/(?:^|\/)fonts\/(DesignPraiseSans|GoogleSansCode)\.woff2$/);
   if (font && request.method === 'GET') return env.ASSETS.fetch(new URL('/fonts/' + font[1] + '.woff2', url.origin));
 
