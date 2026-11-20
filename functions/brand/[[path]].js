@@ -1,6 +1,7 @@
 // Private brand area. Only the owner (with the password) can open it.
-// The files in /vault are AES-256-GCM encrypted; the key lives only in
-// Cloudflare (Pages > Settings > Variables and secrets: BRAND_KEY, BRAND_PASSWORD).
+// Files are read live from the private repo designpraiseeric-brand-private.
+// Secrets (Pages > Settings > Variables and secrets): GITHUB_TOKEN (read-only),
+// BRAND_PASSWORD, BRAND_KEY (signs the login session).
 
 const COOKIE = 'dp_brand';
 const SESSION_DAYS = 30;
@@ -55,21 +56,6 @@ const TYPES = { html: 'text/html; charset=utf-8', css: 'text/css; charset=utf-8'
   json: 'application/json; charset=utf-8', md: 'text/markdown; charset=utf-8', txt: 'text/plain; charset=utf-8',
   jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', svg: 'image/svg+xml', woff2: 'font/woff2', ttf: 'font/ttf', zip: 'application/zip' };
 
-async function vaultName(path) {
-  const h = new Uint8Array(await crypto.subtle.digest('SHA-256', enc.encode('dp-vault:' + path)));
-  return [...h.slice(0, 16)].map(b => b.toString(16).padStart(2, '0')).join('') + '.bin';
-}
-// Returns the decrypted file, or null if there is no such file.
-async function openVault(env, request, path) {
-  const res = await env.ASSETS.fetch(new URL('/vault/' + (await vaultName(path)), request.url));
-  if (!res.ok) return null;
-  const data = new Uint8Array(await res.arrayBuffer());
-  if (data.length < 29) return null; // not an encrypted file (e.g. a fallback page)
-  const key = await crypto.subtle.importKey('raw', b64ToBytes(env.BRAND_KEY), 'AES-GCM', false, ['decrypt']);
-  try {
-    return await crypto.subtle.decrypt({ name: 'AES-GCM', iv: data.slice(0, 12), additionalData: enc.encode(path) }, key, data.slice(12));
-  } catch { return null; }
-}
 // Preferred source: the private GitHub repo itself, so every push shows up here.
 // Needs GITHUB_TOKEN (fine-grained, read-only Contents on designpraiseeric-brand-private).
 const REPO = 'designpraiseeric/designpraiseeric-brand-private';
@@ -116,7 +102,7 @@ ${error ? '<p>That password is not right.</p>' : ''}
 }
 
 export async function onRequest({ request, env }) {
-  if (!env.BRAND_KEY || !env.BRAND_PASSWORD) return html('Not configured', 503);
+  if (!env.BRAND_KEY || !env.BRAND_PASSWORD || !env.GITHUB_TOKEN) return html('Not configured', 503);
 
   const url = new URL(request.url);
   const path = url.pathname.replace(/^\/brand/, '') || '';
@@ -126,8 +112,8 @@ export async function onRequest({ request, env }) {
   // The brand fonts are already public on the main site; reuse them.
   // Health check (no content): is the live repo source reachable?
   if (path === '/health') {
-    let ok = false, source = env.GITHUB_TOKEN ? 'repo' : 'vault';
-    try { ok = env.GITHUB_TOKEN ? !!(await openRepo(env, 'CHANGELOG.md')) : !!(await openVault(env, request, 'index.html')); } catch {}
+    let ok = false, source = 'repo';
+    try { ok = !!env.GITHUB_TOKEN && !!(await openRepo(env, 'CHANGELOG.md')); } catch {}
     return new Response(JSON.stringify({ source, ok }), { status: ok ? 200 : 503, headers: { 'Content-Type': 'application/json', ...SECURITY } });
   }
   const font = path.match(/(?:^|\/)fonts\/(DesignPraiseSans|GoogleSansCode)\.woff2$/);
@@ -161,7 +147,7 @@ export async function onRequest({ request, env }) {
   if (file.split('/').some(seg => seg === '..' || seg === '.')) return new Response('Not found', { status: 404, headers: SECURITY });
 
   let body;
-  try { body = env.GITHUB_TOKEN ? await openRepo(env, file) : await openVault(env, request, file); }
+  try { body = await openRepo(env, file); }
   catch { return new Response('The brand archive is unavailable right now.', { status: 502, headers: SECURITY }); }
   if (!body) return new Response('Not found', { status: 404, headers: SECURITY });
 
