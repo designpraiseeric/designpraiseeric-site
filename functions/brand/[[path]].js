@@ -112,7 +112,7 @@ export async function onRequest({ request, env }) {
   if (font && request.method === 'GET') return env.ASSETS.fetch(new URL('/fonts/' + font[1] + '.woff2', url.origin));
 
   if (path === '/logout') {
-    return new Response(null, { status: 302, headers: { Location: '/brand/', 'Set-Cookie': `${COOKIE}=; Path=/brand; Max-Age=0; HttpOnly; Secure; SameSite=Strict`, ...SECURITY } });
+    return new Response(null, { status: 302, headers: { Location: '/brand/', 'Set-Cookie': `${COOKIE}=; Path=/brand; Max-Age=0; HttpOnly; Secure; SameSite=Lax`, ...SECURITY } });
   }
 
   if (path === '/' && request.method === 'POST') {
@@ -120,7 +120,7 @@ export async function onRequest({ request, env }) {
     if (await passwordOk(env, String(form.get('password') || ''))) {
       return new Response(null, { status: 303, headers: {
         Location: '/brand/',
-        'Set-Cookie': `${COOKIE}=${await makeSession(env)}; Path=/brand; Max-Age=${SESSION_DAYS * 86400}; HttpOnly; Secure; SameSite=Strict`,
+        'Set-Cookie': `${COOKIE}=${await makeSession(env)}; Path=/brand; Max-Age=${SESSION_DAYS * 86400}; HttpOnly; Secure; SameSite=Lax`,
         ...SECURITY } });
     }
     await new Promise(r => setTimeout(r, 1200)); // slow down guessing
