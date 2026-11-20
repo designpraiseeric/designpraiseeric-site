@@ -22,7 +22,7 @@ Without a key, the form falls back to opening the visitor's email app.
 - The site opens in night mode; the sun/moon button switches to day and remembers the visitor's choice.
 
 ## Private brand area (/brand)
-`/brand` is for the owner only. It asks for a password, then opens the brand archive: Directions A, B and C (preferred) as tabs, the font kit and downloads.
+`/brand` is for the owner only. It asks for a password, then opens the brand archive: Directions A, B and C (preferred) as tabs, logos, mockups, the font kit and downloads.
 - `vault/*.bin` are AES-256-GCM encrypted, with file names that don't reveal what they are. They are unreadable without `BRAND_KEY`, which lives only in Cloudflare.
 - `functions/brand/[[path]].js` checks the password and decrypts on the server. `functions/vault/` hides the encrypted files from direct requests.
 - The readable master copy is the private repo `designpraiseeric-brand-private`.
