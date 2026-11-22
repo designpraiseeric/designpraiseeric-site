@@ -377,11 +377,19 @@ footer a{color:var(--ink);text-decoration:none}footer a:hover{color:var(--violet
 </form>
 </div></section>
 
+<section id="updates" data-p="8" style="padding-block:clamp(56px,7vw,96px)"><div class="wrap two">
+<div>
+<span class="lt"><h2>Updates by email</h2></span>
+<p class="lead" style="margin-top:12px">New films and design work, new tools, and the occasional note from the studio. Choose what you want to hear about.</p>
+</div>
+<div data-dp-news="compact"></div>
+</div></section>
+
 <footer><div class="wrap">
 <div><a class="brand" href="#top"><svg viewBox="-24 -10 296 320" class="mk1" aria-hidden="true"></svg>designpraise</a><p class="mute" style="font-size:15px;margin-top:12px">Art direction, motion design and film. Lagos, Nigeria.</p></div>
 <div><h4>Studio</h4><ul><li><a href="#work">Work</a></li><li><a href="#services">Services</a></li><li><a href="#about">About</a></li><li><a href="#contact">Contact</a></li></ul></div>
 <div><h4>Tools</h4><ul><li><a href="#tools" data-tool="0">Colored Lens</a></li><li><a href="#tools" data-tool="1">Lukuluku</a></li><li><a href="#tools" data-tool="2">Colored Lens Studio</a></li><li><a href="#tools" data-tool="3">Aline</a></li></ul></div>
-<div><h4>Elsewhere</h4><ul><li><a href="https://www.instagram.com/designpraiseeric/">Instagram</a></li><li><a href="https://www.behance.net/divinepraiseeric">Behance</a></li><li><a href="https://github.com/designpraiseeric">GitHub</a></li><li><a href="https://designpraiseeric.gumroad.com/">Gumroad</a></li></ul></div>
+<div><h4>Elsewhere</h4><ul><li><a href="https://www.instagram.com/designpraiseeric/">Instagram</a></li><li><a href="https://www.behance.net/divinepraiseeric">Behance</a></li><li><a href="https://github.com/designpraiseeric">GitHub</a></li><li><a href="https://designpraiseeric.gumroad.com/">Gumroad</a></li><li><a href="#updates">Newsletter</a></li></ul></div>
 </div>
 <div class="legal"><span>© <span id="yr">2026</span> DesignPraise Studio</span><span class="cube" id="fcube" aria-hidden="true"></span></div>
 </footer>
@@ -682,5 +690,7 @@ document.querySelectorAll('.rv,.lt,.steps').forEach(el=>io.observe(el));
 requestAnimationFrame(tick);
 }
 </script>
+<script src="/js/seasons.js" defer></script>
+<script src="/js/dp-extras.js" defer></script>
 </body>
 </html>

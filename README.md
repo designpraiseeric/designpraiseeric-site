@@ -28,3 +28,18 @@ Without a key, the form falls back to opening the visitor's email app.
 - `/brand/health` reports `{"source":"repo","ok":true}` when the repo is reachable. It reveals no content.
 - If the token expires, `/brand` shows "unavailable": create a new token the same way and replace `GITHUB_TOKEN`, then redeploy.
 - To change the password: Cloudflare dashboard → Workers & Pages → designpraiseeric → Settings → Variables and secrets → edit `BRAND_PASSWORD`, then redeploy. Changing it signs out every session.
+
+## Seasonal greetings
+On Christian holy days and Nigerian public days a small card turns in at the bottom left of every page (home, /soon, /tools) with a short note and a verse. Visitors can close it; it stays closed for that season.
+- Calendar: `js/seasons.js` is a copy of `baerista/lib/dp-seasons.js`, the same file the After Effects tools use. Edit it there, then copy it here.
+- Card and newsletter form: `js/dp-extras.js`.
+- Preview any date: add `?season=2026-12-25` to a page URL.
+
+## Newsletter
+Visitors sign up on the home page (`#updates`), /soon and every /tools page. Double opt-in: they get an email to confirm, and every newsletter has a one-click unsubscribe.
+- Write and send at **/brand/newsletter/** (sign in at /brand first). It shows subscribers, a live preview, a test send to yourself, tool releases from Baerista's `registry.json` that haven't been announced yet, and upcoming greetings to draft from.
+- Storage: Cloudflare D1 database `designpraiseeric-newsletter`, bound to this project as `NEWS_DB`. Schema: `migrations/0001_newsletter.sql`.
+- Sending: SMTP from `functions/_lib/mail.js`. Add the secret `SMTP_PASS` (a Gmail App Password for divinepraiseeric@gmail.com) in Cloudflare → Workers & Pages → designpraiseeric → Settings → Variables and secrets, then redeploy. Until then sign-ups are saved and you can send their confirmations from /brand/newsletter/ once mail is on.
+- Other providers: also set `SMTP_HOST`, `SMTP_PORT` (465 or 587), `SMTP_USER`, `NEWSLETTER_FROM`.
+- Gmail sends to about 500 recipients a day. A send that hits the limit pauses; press Resume under "Sent" the next day.
+- Public endpoints: `POST /api/subscribe`, `POST /api/confirm`, `GET|POST /api/unsubscribe`. Status page: `/newsletter/`.
