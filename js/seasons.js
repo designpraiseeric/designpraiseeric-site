@@ -33,12 +33,54 @@ var DPSeasons = (function () {
     // Advent Sunday: the fourth Sunday before Christmas Day.
     function adventSunday(y) { var xmas = ymd(y, 12, 25); var back = xmas.getDay() === 0 ? 7 : xmas.getDay(); return add(xmas, -back - 21); }
 
+    // Islamic (tabular) calendar -> local Date. Moon sighting in Nigeria can move the real day by one,
+    // so the Eid greetings below run from the day before to the day after.
+    function hijri(y, m, d) {
+        var jd = d + Math.ceil(29.5 * (m - 1)) + (y - 1) * 354 + Math.floor((3 + 11 * y) / 30) + 1948438.5;
+        var t = new Date((jd - 2440587.5) * DAY);
+        return ymd(t.getUTCFullYear(), t.getUTCMonth() + 1, t.getUTCDate());
+    }
+    // Every date in Gregorian year gy that is month/day in the Hijri calendar (usually one; about every 33 years, two).
+    function hijriIn(gy, m, d) {
+        var hy = Math.floor((gy - 622) * 33 / 32), out = [];
+        for (var k = hy - 1; k <= hy + 2; k++) { var dt = hijri(k, m, d); if (dt.getFullYear() === gy) out.push(dt); }
+        return out;
+    }
+
     var NG_GREEN = "#03ee63", AMBER = "#ffa800", LILAC = "#a57bff", AQUA = "#03eed8", MUTE = "";
+
+    // Colours for each day: [main, second, third]. The main colour is the accent everywhere (gem, text, tints).
+    // Church days follow the liturgical colours (violet, white and gold, red, black); civic days use Nigeria's green.
+    var COLORS = {
+        advent:      ["#7c4dff", "#ffc44d", "#2f9e64"],   // violet, candle flame, wreath
+        christmas:   ["#ffb400", "#d6283f", "#1f9d6b"],   // gold, red, evergreen
+        watchnight:  ["#ffd35a", "#27306e", "#a57bff"],   // lamp gold, midnight
+        newyear:     ["#03d9c5", "#ffa800", "#7c4dff"],   // dawn aqua, sun
+        epiphany:    ["#ffc93c", "#3a4fd0", "#a57bff"],   // star gold, night blue
+        mothering:   ["#f06595", "#ffc2d6", "#40c057"],   // rose, blossom, stem
+        palmsunday:  ["#2fb344", "#a9e34b", "#c92a2a"],   // palm greens, passion red
+        goodfriday:  ["#9b2335", "#3b3546", "#b9b0d6"],   // crimson, ash
+        easter:      ["#ffb400", "#2fb36b", "#ff8fa3"],   // gold, new life, dawn
+        ascension:   ["#4dabf7", "#ffd35a", "#d0ebff"],   // sky, glory
+        pentecost:   ["#f03e3e", "#ff922b", "#ffd43b"],   // flame reds
+        trinity:     ["#7c4dff", "#4dabf7", "#ffc93c"],   // three in one
+        reformation: ["#e03131", "#e9d8b4", "#5c3d1e"],   // Reformation red, parchment, ink
+        remembrance: ["#e03131", "#2b2b33", "#2f9e64"],   // poppy, black, green
+        workers:     ["#f76707", "#868e96", "#ffd43b"],   // safety orange, steel
+        children:    ["#fab005", "#4dabf7", "#ff6b6b"],   // play colours
+        democracy:   ["#12b886", "#ffffff", "#ffd43b"],   // green-white
+        fathers:     ["#1c7ed6", "#2f9e44", "#ffa800"],   // blue, oak
+        independence:["#12b886", "#ffffff", "#0b7a4b"],   // green-white-green
+        teachers:    ["#ffa800", "#7c4dff", "#03d9c5"],   // chalk and light
+        eidfitr:     ["#16a34a", "#ffc44d", "#e9d8b4"],   // green, gold, table
+        eidadha:     ["#16a34a", "#ffc44d", "#e9d8b4"]
+    };
 
     // Ordered by priority: the first match wins when two days meet.
     function table(y) {
         var e = easter(y), adv = adventSunday(y);
-        return [
+        var fitr = hijriIn(y, 10, 1), adha = hijriIn(y, 12, 10);
+        var list = [
             { id: "goodfriday", kind: "solemn", from: add(e, -2), to: add(e, -2), title: "Good Friday", accent: MUTE,
               line: "Remembering the cross, where Christ gave himself for us.",
               ref: "Isaiah 53:5", verse: "He was wounded for our transgressions, he was bruised for our iniquities… and with his stripes we are healed." },
@@ -92,8 +134,35 @@ var DPSeasons = (function () {
               ref: "Colossians 3:23", verse: "And whatsoever ye do, do it heartily, as to the Lord, and not unto men." },
             { id: "children", kind: "civic", from: ymd(y, 5, 27), to: ymd(y, 5, 27), title: "Happy Children’s Day", accent: NG_GREEN,
               line: "Every child is a gift.",
-              ref: "Psalm 127:3", verse: "Lo, children are an heritage of the LORD." }
+              ref: "Psalm 127:3", verse: "Lo, children are an heritage of the LORD." },
+            { id: "remembrance", kind: "solemn", from: ymd(y, 1, 15), to: ymd(y, 1, 15), title: "Armed Forces Remembrance Day", accent: "",
+              line: "Remembering those who served and gave their lives for Nigeria.",
+              ref: "John 15:13", verse: "Greater love hath no man than this, that a man lay down his life for his friends." },
+            { id: "teachers", kind: "civic", from: ymd(y, 10, 5), to: ymd(y, 10, 5), title: "Happy Teachers\u2019 Day", accent: "",
+              line: "To everyone who teaches, and to the ones who taught me: thank you.",
+              ref: "Proverbs 9:9", verse: "Give instruction to a wise man, and he will be yet wiser: teach a just man, and he will increase in learning." }
         ];
+        // Neighbourly greetings for Nigeria's Muslim public holidays: a wish of peace to neighbours,
+        // with a verse on loving one's neighbour. (Eid-el-Maulud is left out: it honours Muhammad as prophet.)
+        for (var f = 0; f < fitr.length; f++) list.push({ id: "eidfitr", kind: "neighbour", from: add(fitr[f], -1), to: add(fitr[f], 1), title: "Eid al-Fitr", accent: "",
+              line: "Wishing our Muslim neighbours a peaceful holiday with family and friends.",
+              ref: "Romans 12:18", verse: "If it be possible, as much as lieth in you, live peaceably with all men." });
+        for (var a = 0; a < adha.length; a++) list.push({ id: "eidadha", kind: "neighbour", from: add(adha[a], -1), to: add(adha[a], 1), title: "Eid al-Adha", accent: "",
+              line: "Wishing our Muslim neighbours a peaceful holiday with family and friends.",
+              ref: "Matthew 22:39", verse: "Thou shalt love thy neighbour as thyself." });
+        // Neighbour greetings sit after the church year but before the civic days (Children's Day can share a date with Eid).
+        var ordered = [], late = [];
+        for (var i = 0; i < list.length; i++) {
+            var it = list[i];
+            if (it.kind === "civic" || it.id === "remembrance") late.push(it); else ordered.push(it);
+        }
+        list = ordered.concat(late);
+        for (var j = 0; j < list.length; j++) {
+            var c = COLORS[list[j].id];
+            list[j].colors = c;
+            list[j].accent = c[0];
+        }
+        return list;
     }
 
     function get(date) {
@@ -107,6 +176,7 @@ var DPSeasons = (function () {
                 if (s.id === "advent") {
                     var week = Math.floor((ymd(dt.getFullYear(), dt.getMonth() + 1, dt.getDate()).getTime() - s.from.getTime()) / (7 * DAY)) + 1;
                     out.title = "Advent · week " + week;
+                    out.week = week;
                 }
                 out.key = s.id + "-" + dt.getFullYear();   // stable per season per year (for "dismissed" flags)
                 return out;

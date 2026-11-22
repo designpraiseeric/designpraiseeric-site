@@ -1,5 +1,5 @@
 /* DesignPraise site extras: the seasonal greeting card and the newsletter sign-up.
- * Needs /js/seasons.js first (a copy of baerista/lib/dp-seasons.js — edit it there, then copy).
+ * Needs /js/seasons.js and /js/seasons-art.js first (copies of baerista/lib/dp-seasons.js and dp-seasons-art.js — edit them there, then copy).
  * Uses each page's own colour variables (--bg, --card, --ink, --mute, --line), so it follows day and night.
  *
  * Preview a greeting: add ?season=2026-12-25 to any page URL.
@@ -16,22 +16,28 @@
     "box-shadow:0 0 0 1px var(--line,#e8e3f3),0 24px 60px -24px rgba(26,13,62,.45);font-family:var(--sans,system-ui);",
     "transform-origin:50% 100%;transform:perspective(900px) rotateX(-90deg);opacity:0;transition:transform .55s cubic-bezier(.7,0,.2,1),opacity .55s cubic-bezier(.7,0,.2,1)}",
     ".dps.on{transform:none;opacity:1}",
-    ".dps:before{content:'';position:absolute;inset:0;border-radius:inherit;background:linear-gradient(135deg,var(--dps) 0%,transparent 55%);opacity:.12;pointer-events:none}",
-    ".dps-top{display:flex;align-items:center;gap:10px;padding-right:28px}",
-    ".dps-gem{width:11px;height:11px;border-radius:3px;background:var(--dps);transform:rotate(45deg);flex:none}",
-    ".dps.on .dps-gem{animation:dpsTurn 1.1s .35s cubic-bezier(.7,0,.2,1) both}",
+    ".dps{overflow:hidden}",
+    ".dps:before{content:'';position:absolute;inset:0;background:radial-gradient(120% 90% at 0% 0%,var(--dps) 0%,transparent 55%),radial-gradient(90% 80% at 100% 100%,var(--dps3) 0%,transparent 60%);opacity:.16;pointer-events:none}",
+    ".dps:after{content:'';position:absolute;left:0;right:0;top:0;height:4px;background:linear-gradient(90deg,var(--dps) 0 33.3%,var(--dps2) 33.3% 66.6%,var(--dps3) 66.6%)}",
+    ".dps-art{float:left;width:84px;height:84px;margin:0 14px 6px -4px;position:relative}",
+    ".dps-art svg{width:100%;height:100%;display:block}",
+    ".dps.on .dps-art{animation:dpsTurn .9s .3s cubic-bezier(.7,0,.2,1) both}",
+    ".dps blockquote{clear:both}",
+    ".dps-top{display:flex;align-items:center;gap:10px;padding-right:28px;min-height:30px}",
+    ".dps-gem{display:none}",
     ".dps h2{margin:0;font:700 18px/1.2 var(--sans,system-ui);letter-spacing:-.02em}",
-    ".dps p{margin:8px 0 0;font-size:15px;line-height:1.5;color:var(--mute,#5a5278)}",
+    ".dps p{margin:6px 0 0;font-size:15px;line-height:1.5;color:var(--mute,#5a5278)}",
+    ".dps-tint{position:absolute;inset:0;pointer-events:none}",
     ".dps blockquote{margin:12px 0 0;padding:10px 0 0;border-top:1px dashed var(--line,#e8e3f3);font-size:15px;line-height:1.5}",
     ".dps cite{display:block;margin-top:6px;font:500 12px var(--mono,monospace);font-style:normal;color:var(--mute,#5a5278)}",
     /* small screens: start folded to the title; tap to read the verse */
-    "@media (max-width:640px){.dps{padding:12px 14px}.dps.fold{cursor:pointer}.dps.fold p,.dps.fold blockquote{display:none}.dps h2{font-size:16px}.dps-x{top:5px;right:6px}}",
+    "@media (max-width:640px){.dps{padding:12px 14px}.dps.fold{cursor:pointer}.dps.fold p,.dps.fold blockquote{display:none}.dps h2{font-size:16px}.dps-x{top:5px;right:6px}.dps.fold .dps-art{width:38px;height:38px;margin:0 10px 0 -2px}.dps.fold .dps-top{min-height:38px}.dps-art{width:64px;height:64px}}",
     ".dps-more{display:none;margin-left:auto;font:500 12px var(--mono,monospace);color:var(--mute,#5a5278);white-space:nowrap}",
     "@media (max-width:640px){.dps.fold .dps-more{display:inline}}",
     ".dps-x{position:absolute;top:10px;right:10px;width:32px;height:32px;border:0;border-radius:9px;background:transparent;color:var(--mute,#5a5278);cursor:pointer;display:grid;place-items:center}",
     ".dps-x:hover{background:var(--tint,#f1ebff);color:var(--ink,#1a0d3e)}",
     ".dps-x svg{width:14px;height:14px}",
-    "@keyframes dpsTurn{0%{transform:rotate(-45deg) scale(.3)}60%{transform:rotate(225deg) scale(1.15)}100%{transform:rotate(225deg)}}",
+    "@keyframes dpsTurn{from{transform:perspective(300px) rotateY(-90deg);opacity:0}}",
     /* newsletter */
     ".dpn{display:grid;gap:14px;max-width:560px;font-family:var(--sans,system-ui)}",
     ".dpn h3{margin:0;font:700 22px/1.2 var(--sans,system-ui);letter-spacing:-.02em;color:var(--ink)}",
@@ -58,7 +64,7 @@
     ".dpn-msg.err{color:#c8235a}:root[data-theme=dark] .dpn-msg.err{color:#ff6a8a}",
     ".dpn .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}",
     ".dpn.compact{gap:10px}",
-    "@media (prefers-reduced-motion:reduce){.dps{transition:opacity .2s}.dps.on .dps-gem{animation:none;transform:rotate(45deg)}}"
+    "@media (prefers-reduced-motion:reduce){.dps{transition:opacity .2s}.dps.on .dps-art{animation:none}}"
   ].join("");
 
   function css() {
@@ -82,7 +88,12 @@
     var card = el("aside", "dps");
     card.setAttribute("role", "note");
     card.setAttribute("aria-label", s.title);
-    card.style.setProperty("--dps", s.accent || "var(--mute,#5a5278)");
+    var c = s.colors || [s.accent, s.accent, s.accent];
+    card.style.setProperty("--dps", c[0]); card.style.setProperty("--dps2", c[1]); card.style.setProperty("--dps3", c[2]);
+    if (typeof DPSeasonArt !== "undefined") {
+      var art = el("div", "dps-art"); art.innerHTML = DPSeasonArt.svg(s); art.setAttribute("aria-hidden", "true");
+      card.appendChild(art);
+    }
     var top = el("div", "dps-top");
     top.appendChild(el("span", "dps-gem"));
     top.appendChild(el("h2", null, s.title));

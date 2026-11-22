@@ -31,7 +31,9 @@ Without a key, the form falls back to opening the visitor's email app.
 
 ## Seasonal greetings
 On Christian holy days and Nigerian public days a small card turns in at the bottom left of every page (home, /soon, /tools) with a short note and a verse. Visitors can close it; it stays closed for that season.
-- Calendar: `js/seasons.js` is a copy of `baerista/lib/dp-seasons.js`, the same file the After Effects tools use. Edit it there, then copy it here.
+- Calendar and colours: `js/seasons.js`; pictures: `js/seasons-art.js`. Both are copies of the files in `baerista/lib/`, which the After Effects tools use too. Edit them there, then copy them here.
+- `img/seasons/<day>.jpg` (email banners) and `img/seasons/icon/<day>.png` (icons the ScriptUI tools download) are rendered by `baerista/site/render_seasons.py`.
+- Includes Eid al-Fitr and Eid al-Adha as greetings to Muslim neighbours (Rom 12:18, Matt 22:39). Eid-el-Maulud is left out on purpose.
 - Card and newsletter form: `js/dp-extras.js`.
 - Preview any date: add `?season=2026-12-25` to a page URL.
 

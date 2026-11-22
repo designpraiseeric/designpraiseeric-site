@@ -230,7 +230,8 @@ th{font:500 11px var(--mono);color:var(--mute)}
         (function(s){b.onclick=function(){
           if($("body").value.trim()&&!confirm("Replace the current draft?"))return;
           $("subject").value=s.title.replace(/ · week \d+/,"");
-          $("body").value="# "+s.title.replace(/ · week \d+/,"")+"\n\n"+s.line+"\n\n> "+s.verse+"\n> — "+s.ref+" (KJV)\n\n[Write a personal note here.]\n\nWith thanks,\nDivinepraise";
+          var key=s.id==="advent"?"advent-"+Math.max(1,Math.min(4,s.week||1)):s.id;
+          $("body").value="!["+s.title+"]("+location.origin+"/img/seasons/"+key+".jpg)\n\n# "+s.title.replace(/ · week \d+/,"")+"\n\n"+s.line+"\n\n> "+s.verse+"\n> — "+s.ref+" (KJV)\n\n[Write a personal note here.]\n\nWith thanks,\nDivinepraise";
           announce=null;preview()}})(s);
         p.appendChild(b);box.appendChild(p);
         if(Object.keys(seen).length>=2)break;}
