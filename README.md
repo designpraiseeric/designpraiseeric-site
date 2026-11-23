@@ -21,6 +21,13 @@ Without a key, the form falls back to opening the visitor's email app.
 - Loglines for Purple and Aró in `WORK`
 - The site opens in night mode; the sun/moon button switches to day and remembers the visitor's choice.
 
+## Work pages (/work/<project>/)
+Each piece with a film gets its own page; its card on the home page links there (set `url` and `loop` on the entry in `WORK`).
+- First one: `/work/chimpx/`. Copy that folder for the next project and change the words, stills and the `data-*` values on the `film.js` script tag.
+- `work/film.js` (shared player) loads in stages: poster first, then a 3-second silent loop only while the film is on screen (skipped with reduced motion or data saver), and the full film only when the visitor presses play, a chapter or the timeline.
+- Media for each project lives in `media/<project>/`: `<name>-loop.{av1,h264}.mp4` (768 px, about 3 s), `<name>-1080.av1.mp4`, `<name>-1080.hevc.mp4` (desktop), `<name>-720.h264.mp4` (phones and older browsers), `<name>-en.vtt` (captions), `<name>-scrub.webp` (8×5 frames, one every 0.5 s), poster and stills.
+- Cloudflare Pages refuses files over 25 MB, so never upload a master render. When the media folder grows, move the videos to an R2 bucket and change `data-media` on the script tag (and the `loop` path in `WORK`); nothing else changes.
+
 ## Private brand area (/brand)
 `/brand` is for the owner only. It asks for a password, then opens the brand archive: Directions A, B and C (preferred) as tabs, logos, mockups, the font kit and downloads.
 - Files are read live from the private repo `designpraiseeric-brand-private` (branch `main`). Every push to that repo shows up here immediately; nothing to rebuild.
