@@ -55,7 +55,7 @@
     ch.innerHTML=chapters.map(function(c,i){return '<button type="button" data-i="'+i+'"><span>'+fmt(c[0])+'</span>'+c[1]+'</button>'}).join('');
     ch.addEventListener('click',function(e){var b=e.target.closest('button');if(b)start(chapters[+b.dataset.i][0])});
   }
-  document.querySelectorAll('.beat .at').forEach(function(b){b.addEventListener('click',function(){start(+b.dataset.t);film.scrollIntoView({behavior:reduce?'auto':'smooth',block:'center'})})});
+  document.querySelectorAll('.beat .at,.detail .at').forEach(function(b){b.addEventListener('click',function(){start(+b.dataset.t);film.scrollIntoView({behavior:reduce?'auto':'smooth',block:'center'})})});
 
   /* timeline: chapter segments, a progress bar and a preview of the frame under the pointer */
   if(scrub){
@@ -85,6 +85,11 @@
       if(ch){var cur=-1;chapters.forEach(function(c,i){if(c[0]<=t)cur=i});ch.querySelectorAll('button').forEach(function(b,i){b.setAttribute('aria-current',i===cur)})}
     });
   }
+
+  /* other close-up loops: play only while visible */
+  if(!reduce&&!saver)document.querySelectorAll('video[data-inview]').forEach(function(v){
+    new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){var p=v.play();if(p&&p.catch)p.catch(function(){})}else v.pause()})},{threshold:.4}).observe(v);
+  });
 
   /* stills open full size */
   var view=$('view');
