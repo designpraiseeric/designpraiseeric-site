@@ -1,0 +1,6 @@
+/media/*
+  Cache-Control: public, max-age=2592000
+  Access-Control-Allow-Origin: *
+
+/media/*.vtt
+  Content-Type: text/vtt; charset=utf-8
