@@ -58,8 +58,8 @@
 .stills button:focus-visible{outline:2px solid var(--mark);outline-offset:3px}
 .beat h3{font-size:22px;margin:0 0 10px;letter-spacing:-.015em}
 .beat p{color:var(--mute);margin:0 0 14px;max-width:46ch}
-.beat .at{all:unset;cursor:pointer;font:500 12px var(--mono);color:var(--mark);border-bottom:1px solid currentColor;padding-bottom:1px}
-.beat .at:focus-visible{outline:2px solid var(--mark);outline-offset:3px}
+.beat .at,.detail .at{all:unset;cursor:pointer;font:500 12px var(--mono);color:var(--mark);border-bottom:1px solid currentColor;padding-bottom:1px}
+.beat .at:focus-visible,.detail .at:focus-visible{outline:2px solid var(--mark);outline-offset:3px}
 
 /* still viewer */
 dialog.view{border:0;padding:0;background:transparent;max-width:min(1400px,94vw);width:100%}
@@ -68,6 +68,14 @@ dialog.view img{width:100%;height:auto;border-radius:14px;display:block}
 dialog.view button{position:fixed;top:16px;right:16px;width:44px;height:44px;border-radius:12px;border:0;background:rgba(255,255,255,.12);color:#fff;font-size:24px;cursor:pointer}
 
 .feats{grid-template-columns:repeat(auto-fit,minmax(min(100%,400px),1fr))}
+
+/* a detail with its own close-up */
+.detail{display:grid;gap:24px 48px;align-items:center}
+@media(min-width:860px){.detail{grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr)}}
+.detail-media{position:relative}
+.detail-media video{display:block;width:100%;height:auto;aspect-ratio:4/5;object-fit:cover;border-radius:20px;border:1px solid var(--s-line);background:#0b0520}
+.detail h2{margin-bottom:16px}
+.detail p{color:var(--mute);font-size:18px;margin:0 0 16px;max-width:56ch}
 
 /* closing call */
 .next{display:flex;flex-wrap:wrap;gap:16px 40px;align-items:center;justify-content:space-between}
