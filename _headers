@@ -8,7 +8,6 @@
 /phase/*
   Cache-Control: public, max-age=300
   X-Robots-Tag: noindex
-  Content-Type: text/plain; charset=utf-8
 
-/phase/*.json
-  Content-Type: application/json; charset=utf-8
+/phase/cards.txt
+  Content-Type: text/plain; charset=utf-8
