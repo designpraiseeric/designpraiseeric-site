@@ -79,6 +79,9 @@ async function linkInfo(url) {
   } catch (e) { return null; }
 }
 
+// Short failure reasons (status codes only, never keys or content), returned as `why` so problems can be diagnosed.
+let WHY = [];
+
 async function askClaude(env, system, content) {
   const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 22000);
   try {
@@ -87,10 +90,12 @@ async function askClaude(env, system, content) {
       headers: { 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
       body: JSON.stringify({ model: env.RATE_AI_MODEL || 'claude-haiku-5-5', max_tokens: 900, system, messages: [{ role: 'user', content }] }),
     });
-    if (!r.ok) return null;
+    if (!r.ok) { WHY.push('claude ' + r.status); return null; }
     const j = await r.json();
-    return pickJSON((j.content || []).map((c) => c.text || '').join(''));
-  } catch (e) { return null; } finally { clearTimeout(t); }
+    const out = pickJSON((j.content || []).map((c) => c.text || '').join(''));
+    if (!out) WHY.push('claude unreadable');
+    return out;
+  } catch (e) { WHY.push('claude ' + (e.name === 'AbortError' ? 'timeout' : 'network')); return null; } finally { clearTimeout(t); }
 }
 
 async function urlToInline(url) {
@@ -119,13 +124,18 @@ async function askGemini(env, system, content) {
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
       method: 'POST', signal: ctl.signal,
       headers: { 'x-goog-api-key': env.GEMINI_API_KEY, 'content-type': 'application/json' },
-      body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: [{ role: 'user', parts }], generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 1200, temperature: 0.4 } }),
+      body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: [{ role: 'user', parts }], generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 4096, temperature: 0.4 } }),
     });
-    if (!r.ok) return null;
+    if (!r.ok) {
+      let st = ''; try { const e = await r.json(); st = (e.error && (e.error.status || e.error.message || '')) + ''; } catch (e) {}
+      WHY.push(`gemini ${r.status} ${st.slice(0, 80)}`.trim()); return null;
+    }
     const j = await r.json();
     const c = j.candidates && j.candidates[0];
-    return pickJSON(((c && c.content && c.content.parts) || []).map((p) => p.text || '').join(''));
-  } catch (e) { return null; } finally { clearTimeout(t); }
+    const out = pickJSON(((c && c.content && c.content.parts) || []).map((p) => p.text || '').join(''));
+    if (!out) WHY.push('gemini unreadable ' + ((c && c.finishReason) || (j.promptFeedback && j.promptFeedback.blockReason) || 'no candidate'));
+    return out;
+  } catch (e) { WHY.push('gemini ' + (e.name === 'AbortError' ? 'timeout' : 'network')); return null; } finally { clearTimeout(t); }
 }
 
 async function ask(env, action, content, request) {
@@ -137,6 +147,7 @@ async function ask(env, action, content, request) {
 }
 
 export async function onRequestPost({ request, env, waitUntil }) {
+  WHY = [];
   if (!usable(env, request)) return json({ ok: false }, 503);
   let raw;
   try { raw = await request.text(); } catch (e) { return json({ ok: false }, 400); }
@@ -168,7 +179,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
     // A remote thumbnail can fail to load; try once more without them.
     out = await ask(env, action, content.filter((c) => !(c.source && c.source.type === 'url')), request);
   }
-  if (!out) return json({ ok: false }, 502);
+  if (!out) return json({ ok: false, why: WHY.slice(0, 4) }, 502);
 
   const row = { action, category: ctx.category, tier: ctx.tier, market: ctx.market, currency: ctx.currency, est_mid: ctx.estimate && Math.round(+ctx.estimate.mid || 0), insight: out.insight, feature: out.feature,
     meta: { selections: (ctx.selections || []).slice(0, 40), plan: ctx.plan, questions: out.questions, summary: out.summary } };
