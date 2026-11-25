@@ -11,7 +11,7 @@
 //   ANTHROPIC_API_KEY   Claude (preferred)
 //   RATE_AI_MODEL       optional, default claude-haiku-5-5
 //   GEMINI_API_KEY      Gemini, from Google AI Studio (one key)
-//   GEMINI_MODEL        optional, default gemini-3.6-flash
+//   GEMINI_MODEL        optional; tried first, then gemini-3.5-flash-lite, gemini-3.6-flash, gemini-3.1-flash-lite
 //   GEMINI_PAID         set to "yes" once billing is on for that Google project. On Google's free tier, prompts and
 //                       images may be used by Google to improve its products, so client images are NOT sent to
 //                       Gemini unless this is "yes" (the image upload is hidden; questions and link reading still work).
@@ -111,6 +111,28 @@ async function urlToInline(url) {
     return { inline_data: { mime_type: type, data: btoa(bin) } };
   } catch (e) { return null; } finally { clearTimeout(t); }
 }
+async function geminiCall(env, model, system, parts, thinking) {
+  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 9000);
+  try {
+    const gc = { responseMimeType: 'application/json', maxOutputTokens: 4096, temperature: 0.4 };
+    if (thinking) gc.thinkingConfig = { thinkingLevel: 'low' };
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+      method: 'POST', signal: ctl.signal,
+      headers: { 'x-goog-api-key': env.GEMINI_API_KEY, 'content-type': 'application/json' },
+      body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: [{ role: 'user', parts }], generationConfig: gc }),
+    });
+    if (!r.ok) {
+      let st = ''; try { const e = await r.json(); st = (e.error && (e.error.status || e.error.message || '')) + ''; } catch (e) {}
+      return { status: r.status, why: `${model} ${r.status} ${st.slice(0, 60)}`.trim() };
+    }
+    const j = await r.json();
+    const c = j.candidates && j.candidates[0];
+    const out = pickJSON(((c && c.content && c.content.parts) || []).map((p) => p.text || '').join(''));
+    return out ? { out } : { why: `${model} unreadable ${(c && c.finishReason) || (j.promptFeedback && j.promptFeedback.blockReason) || 'no candidate'}` };
+  } catch (e) { return { why: `${model} ${e.name === 'AbortError' ? 'timeout' : 'network'}` }; } finally { clearTimeout(t); }
+}
+// Models tried in order (fast first). GEMINI_MODEL, if set, goes to the front.
+const GEMINI_CHAIN = ['gemini-3.5-flash-lite', 'gemini-3.6-flash', 'gemini-3.1-flash-lite'];
 async function askGemini(env, system, content) {
   const parts = [];
   for (const c of content) {
@@ -118,24 +140,14 @@ async function askGemini(env, system, content) {
     else if (c.source && c.source.type === 'base64') { if (imagesOk(env)) parts.push({ inline_data: { mime_type: c.source.media_type, data: c.source.data } }); }
     else if (c.source && c.source.type === 'url') { const p = await urlToInline(c.source.url); if (p) parts.push(p); }
   }
-  const model = env.GEMINI_MODEL || 'gemini-3.6-flash';
-  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 22000);
-  try {
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
-      method: 'POST', signal: ctl.signal,
-      headers: { 'x-goog-api-key': env.GEMINI_API_KEY, 'content-type': 'application/json' },
-      body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: [{ role: 'user', parts }], generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 4096, temperature: 0.4 } }),
-    });
-    if (!r.ok) {
-      let st = ''; try { const e = await r.json(); st = (e.error && (e.error.status || e.error.message || '')) + ''; } catch (e) {}
-      WHY.push(`gemini ${r.status} ${st.slice(0, 80)}`.trim()); return null;
-    }
-    const j = await r.json();
-    const c = j.candidates && j.candidates[0];
-    const out = pickJSON(((c && c.content && c.content.parts) || []).map((p) => p.text || '').join(''));
-    if (!out) WHY.push('gemini unreadable ' + ((c && c.finishReason) || (j.promptFeedback && j.promptFeedback.blockReason) || 'no candidate'));
-    return out;
-  } catch (e) { WHY.push('gemini ' + (e.name === 'AbortError' ? 'timeout' : 'network')); return null; } finally { clearTimeout(t); }
+  const chain = [...new Set([env.GEMINI_MODEL, ...GEMINI_CHAIN].filter(Boolean))];
+  for (const model of chain) {
+    let r = await geminiCall(env, model, system, parts, true);
+    if (r.status === 400) r = await geminiCall(env, model, system, parts, false); // model without thinking settings
+    if (r.out) return r.out;
+    WHY.push(r.why);
+  }
+  return null;
 }
 
 async function ask(env, action, content, request) {
