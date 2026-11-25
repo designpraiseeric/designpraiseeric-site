@@ -1,0 +1,510 @@
+/* =====================================================================
+   LIVE RATE CARD — every price, rule and policy lives in this file.
+   Edit here; app.js reads it and never needs to change for price updates.
+
+   HOW PRICES WORK
+   All money values are naira for a STANDARD-tier client in NIGERIA.
+   The engine then applies the client's tier and market, and converts to
+   the display currency at the FX rate below.
+
+     production = (category.base + every option's b) × every scale × every m
+     lines      = p × production   (shown as their own line)
+                + a                (fixed line, scaled by tier and market)
+                + pass             (third-party cost: market-scaled, NOT tier-discounted)
+     range      = total × band.lo … total × band.hi  (widened by "not sure" answers)
+
+   OPTION EFFECTS (any combination)
+     m: 1.2       multiply production (style, complexity…)
+     b: 50000     add to the base before multipliers
+     p: 0.15      add a line worth 15% of production (rush, rights, extra formats…)
+     a: 40000     add a fixed line
+     pass: 40000  add a third-party cost line (talent, stock, rentals)
+     perMin       scale a/pass by the film's length in minutes (min 1)
+     perDay       scale a/pass by the number of shoot days
+     u: 1         "not sure" — widens the range a little
+     when:{q,any} the effect only counts when another question has one of these answers
+   RANGE QUESTIONS
+     scale:{ref, exp}  production × (value / ref) ^ exp   (exp < 1: longer = cheaper per unit)
+   ===================================================================== */
+window.RATES = {
+  version: '2026-11-25',
+  owner: { name: 'Divinepraise Eric', studio: 'DesignPraise Studio', email: 'divinepraiseeric@gmail.com', wa: '2348135726234' },
+
+  /* Range band around the computed figure. Anchor check: a standard motion video
+     at 90 s comes out near ₦80k at the low end, 180 s near ₦250k at the high end. */
+  band: { lo: 0.76, hi: 1.3, perUnsure: 0.04 },
+
+  /* One working day of studio time at standard tier (used for timeline estimates). */
+  dayRate: 25000,
+
+  /* ---------- currencies: FX = naira per unit (update when rates move) ---------- */
+  currencies: {
+    NGN: { symbol: '₦', fx: 1, round: 5000, name: 'Naira' },
+    USD: { symbol: '$', fx: 1400, round: 10, name: 'US dollar' },   // NFEM ≈ ₦1,357, parallel ≈ ₦1,440 (Nov 2026)
+    GBP: { symbol: '£', fx: 1800, round: 10, name: 'Pound sterling' } // ≈ ₦1,790–1,840 (Nov 2026)
+  },
+
+  /* ---------- markets: price level vs Nigeria, by economic level not exchange rate ---------- */
+  markets: [
+    { id: 'ng', label: 'Nigeria', level: 1, currencies: ['NGN', 'USD', 'GBP'], def: 'NGN', revenue: 'ngn' },
+    { id: 'af', label: 'Elsewhere in Africa', level: 2, currencies: ['USD', 'GBP'], def: 'USD', revenue: 'usd' },
+    { id: 'uk', label: 'United Kingdom', level: 5.5, currencies: ['GBP', 'USD'], def: 'GBP', revenue: 'gbp' },
+    { id: 'us', label: 'United States or Canada', level: 6, currencies: ['USD', 'GBP'], def: 'USD', revenue: 'usd' },
+    { id: 'eu', label: 'Europe, Australia, NZ, Gulf states', level: 5.5, currencies: ['USD', 'GBP'], def: 'USD', revenue: 'usd' },
+    { id: 'row', label: 'Anywhere else', level: 3, currencies: ['USD', 'GBP'], def: 'USD', revenue: 'usd' }
+  ],
+
+  /* ---------- client tiers ---------- */
+  tiers: [
+    { id: 'community', label: 'Community', note: 'Nonprofits, churches, students and personal projects', m: 0.75 },
+    { id: 'startup', label: 'Early startup', note: 'New ventures and solo creators', m: 0.85 },
+    { id: 'small', label: 'Small business', note: 'Small teams with steady trade', m: 0.92 },
+    { id: 'standard', label: 'Standard', note: 'Established businesses and agencies', m: 1 },
+    { id: 'growth', label: 'Growth', note: 'Larger or well-funded companies', m: 1.3 },
+    { id: 'enterprise', label: 'Enterprise', note: 'Corporates, government and multinationals', m: 1.7 }
+  ],
+  /* score → tier. Score = organisation + team size + revenue + funding points.
+     Nonprofit-type organisations land in Community below the "community" threshold, everyone else in Early startup. */
+  tierRules: { community: 1, small: 2, standard: 4, growth: 6, enterprise: 8 },
+
+  /* ---------- step 1: about you ---------- */
+  about: [
+    { id: 'org', type: 'single', label: 'What best describes you?', options: [
+      { id: 'personal', label: 'Individual or personal project', pts: 0, np: true },
+      { id: 'student', label: 'Student or school project', pts: 0, np: true },
+      { id: 'ngo', label: 'Nonprofit, NGO or charity', pts: -1, np: true },
+      { id: 'church', label: 'Church or ministry', pts: -1, np: true },
+      { id: 'creator', label: 'Creator or personal brand', pts: 1 },
+      { id: 'startup', label: 'Early-stage startup', pts: 1 },
+      { id: 'smb', label: 'Small business', pts: 2 },
+      { id: 'company', label: 'Established company', pts: 2 },
+      { id: 'agency', label: 'Agency (work for your client)', pts: 2 },
+      { id: 'corp', label: 'Large corporate, bank or telecom', pts: 4 },
+      { id: 'gov', label: 'Government or public body', pts: 4 },
+      { id: 'mnc', label: 'Multinational or global brand', pts: 5 }
+    ] },
+    { id: 'size', type: 'single', label: 'How many people work there?', options: [
+      { id: 's1', label: 'Just me', pts: 0 }, { id: 's2', label: '2–10', pts: 0 }, { id: 's3', label: '11–50', pts: 1 },
+      { id: 's4', label: '51–250', pts: 2 }, { id: 's5', label: '251–1,000', pts: 3 }, { id: 's6', label: 'Over 1,000', pts: 4 }
+    ] },
+    { id: 'revenue', type: 'single', label: 'Yearly revenue or budget (roughly)', hint: 'Shown in your market’s currency. Choose “Prefer not to say” if you like; it widens the estimate.', options: {
+      ngn: [{ id: 'r0', label: 'Under ₦20m', pts: 0 }, { id: 'r1', label: '₦20m–₦200m', pts: 1 }, { id: 'r2', label: '₦200m–₦2bn', pts: 2 }, { id: 'r3', label: 'Over ₦2bn', pts: 3 }, { id: 'rx', label: 'Prefer not to say', pts: 1, u: 2 }],
+      usd: [{ id: 'r0', label: 'Under $100k', pts: 0 }, { id: 'r1', label: '$100k–$1m', pts: 1 }, { id: 'r2', label: '$1m–$20m', pts: 2 }, { id: 'r3', label: 'Over $20m', pts: 3 }, { id: 'rx', label: 'Prefer not to say', pts: 1, u: 2 }],
+      gbp: [{ id: 'r0', label: 'Under £80k', pts: 0 }, { id: 'r1', label: '£80k–£800k', pts: 1 }, { id: 'r2', label: '£800k–£15m', pts: 2 }, { id: 'r3', label: 'Over £15m', pts: 3 }, { id: 'rx', label: 'Prefer not to say', pts: 1, u: 2 }]
+    } },
+    { id: 'funding', type: 'single', label: 'How is it funded?', options: [
+      { id: 'self', label: 'Self-funded or from sales', pts: 0 }, { id: 'grant', label: 'Grants or donations', pts: 0 },
+      { id: 'seed', label: 'Pre-seed or seed', pts: 0 }, { id: 'series', label: 'Series A or later', pts: 2 },
+      { id: 'listed', label: 'Listed, public or government budget', pts: 2 }, { id: 'na', label: 'Not applicable', pts: 0 }
+    ] }
+  ],
+
+  /* ---------- shared delivery questions (categories list which they use) ---------- */
+  shared: {
+    turnaround: { id: 'turnaround', type: 'single', label: 'Turnaround', hint: 'Standard time is worked out from the scope and shown on the estimate.', options: [
+      { id: 'flex', label: 'Flexible (no fixed date)', m: 0.95, speed: 1.4 },
+      { id: 'std', label: 'Standard', def: true, speed: 1 },
+      { id: 'prio', label: 'Priority (about 25% faster)', p: 0.25, speed: 0.75, line: 'Priority turnaround' },
+      { id: 'rush', label: 'Rush (about 40% faster)', p: 0.5, speed: 0.6, line: 'Rush turnaround' },
+      { id: 'emerg', label: 'Emergency (days, if I’m free)', p: 0.9, speed: 0.4, u: 1, line: 'Emergency turnaround' }
+    ] },
+    revisions: { id: 'revisions', type: 'single', label: 'Revision rounds', hint: 'Two rounds are included at each review stage.', options: [
+      { id: 'r2', label: '2 rounds (included)', def: true }, { id: 'r3', label: '3 rounds', p: 0.1, line: 'Extra revision round' },
+      { id: 'r4', label: '4 rounds', p: 0.18, line: 'Two extra revision rounds' }
+    ] },
+    brand: { id: 'brand', type: 'single', label: 'Brand guidelines', options: [
+      { id: 'full', label: 'Full guidelines (logo, colours, type, rules)', def: true },
+      { id: 'logo', label: 'Logo and colours only', m: 1.06 },
+      { id: 'none', label: 'Nothing yet', m: 1.12 },
+      { id: 'ns', label: 'Not sure', m: 1.05, u: 1 }
+    ] },
+    channels: { id: 'channels', type: 'multi', label: 'Where will it be seen?', hint: 'Choose all that apply.', options: [
+      { id: 'organic', label: 'Website and organic social', def: true },
+      { id: 'internal', label: 'Internal, events or church services' },
+      { id: 'paid', label: 'Paid social and digital ads', p: 0.15, line: 'Usage: paid digital' },
+      { id: 'tv', label: 'TV broadcast', p: 0.35, line: 'Usage: broadcast' },
+      { id: 'ooh', label: 'Cinema, billboards or screens', p: 0.25, line: 'Usage: cinema and outdoor' }
+    ] },
+    territory: { id: 'territory', type: 'single', label: 'Territory', hint: 'Time and territory only add to the price for paid, broadcast or outdoor use.', options: [
+      { id: 'one', label: 'One country', def: true }, { id: 'region', label: 'A region (e.g. West Africa, EU)', p: 0.08, line: 'Usage: regional', when: { q: 'channels', any: ['paid', 'tv', 'ooh'] } },
+      { id: 'world', label: 'Worldwide', p: 0.15, line: 'Usage: worldwide', when: { q: 'channels', any: ['paid', 'tv', 'ooh'] } }
+    ] },
+    term: { id: 'term', type: 'single', label: 'How long will it be used?', options: [
+      { id: 'y1', label: 'Up to 1 year' }, { id: 'y3', label: 'Up to 3 years', p: 0.08, line: 'Usage: 3 years', when: { q: 'channels', any: ['paid', 'tv', 'ooh'] } },
+      { id: 'perp', label: 'Indefinitely', def: true, p: 0.15, line: 'Usage: no time limit', when: { q: 'channels', any: ['paid', 'tv', 'ooh'] } },
+      { id: 'buy', label: 'Full buyout and exclusivity', p: 0.35, line: 'Full buyout' }
+    ] },
+    portfolio: { id: 'portfolio', type: 'single', label: 'Can I show the work in my portfolio?', options: [
+      { id: 'yes', label: 'Yes, after release', def: true }, { id: 'later', label: 'Yes, after an agreed date' },
+      { id: 'nda', label: 'No (NDA)', p: 0.1, line: 'No portfolio use (NDA)' }
+    ] },
+    videoFormats: { id: 'formats', type: 'multi', label: 'Deliverable formats', hint: 'One master (16:9 or your main ratio) is included.', options: [
+      { id: 'master', label: 'Master in one aspect ratio', def: true, lock: true },
+      { id: 'vert', label: 'Vertical 9:16', p: 0.12, line: 'Vertical version' },
+      { id: 'sq', label: 'Square 1:1 or 4:5', p: 0.1, line: 'Square version' },
+      { id: 'cut', label: 'Cutdowns (6 s, 15 s, 30 s)', p: 0.15, line: 'Cutdowns' },
+      { id: 'subs', label: 'Captions or subtitles', a: 15000, perMin: true, line: 'Captions' },
+      { id: 'lang', label: 'Another language version', p: 0.15, line: 'Language version' },
+      { id: 'alpha', label: 'ProRes or transparent files', a: 10000, line: 'Mastering files' },
+      { id: 'proj', label: 'Editable project files', p: 0.15, line: 'Project files' }
+    ] }
+  },
+
+  /* ---------- step 5: plan, volume and payment ---------- */
+  volume: { id: 'count', label: 'How many pieces like this?', hint: 'Same style and brief. Each extra piece costs less because the look is already set.', min: 1, max: 20,
+    steps: [{ from: 2, off: 0.05 }, { from: 3, off: 0.1 }, { from: 5, off: 0.15 }, { from: 10, off: 0.2 }] },
+  retainer: { id: 'retainer', label: 'Ongoing work?', options: [
+    { id: 'no', label: 'One-off project', def: true, off: 0 },
+    { id: 'm3', label: 'Monthly retainer, 3 months', off: 0.1, months: 3 },
+    { id: 'm6', label: 'Monthly retainer, 6 months', off: 0.15, months: 6 },
+    { id: 'm12', label: 'Monthly retainer, 12 months', off: 0.2, months: 12 }
+  ], note: 'On a retainer, “how many pieces” means pieces per month. Volume and retainer savings don’t stack; you get whichever is higher.' },
+  payPref: { id: 'pay', label: 'Payment preference', options: [
+    { id: 'std', label: 'Deposit, then milestones', def: true },
+    { id: 'full', label: 'Pay in full upfront (3% off)', off: 0.03 }
+  ] },
+  budget: { id: 'budget', label: 'What budget do you have in mind?', hint: 'This never changes the estimate. It helps me suggest the right scope.' },
+
+  /* deposit and milestones, by total in naira-equivalent at Nigerian level */
+  payment: [
+    { upTo: 150000, deposit: 1, plan: [['Full payment before work starts', 1]] },
+    { upTo: 1000000, deposit: 0.5, plan: [['Deposit to book', 0.5], ['Before final files', 0.5]] },
+    { upTo: 5000000, deposit: 0.4, plan: [['Deposit to book', 0.4], ['On approved direction', 0.3], ['Before final files', 0.3]] },
+    { upTo: Infinity, deposit: 0.3, plan: [['Deposit to book', 0.3], ['On approved direction', 0.25], ['On first full cut', 0.25], ['Before final files', 0.2]] }
+  ],
+  depositFloor: { international: 0.5, rush: 0.6 },
+
+  policies: [
+    ['Estimates', 'Every figure here is an estimate. The fixed quote comes after a discovery call and a written brief, and it can be higher or lower than this range.'],
+    ['Revisions', 'Two rounds of revisions are included at each review stage (direction, first cut, final). A round is one set of combined notes. Changes to an approved script, storyboard or direction count as new scope.'],
+    ['Deposit', 'Work is booked when the deposit is paid. Production starts after the brief is signed off.'],
+    ['Refunds', 'Before direction starts, the deposit is refunded less 25% for discovery and planning. After direction starts, the deposit is non-refundable and completed milestones are due. Nothing is refunded once final files are delivered.'],
+    ['Cancellation and pauses', 'Projects paused for more than 30 days by the client may be rescheduled into the next free slot. Rush and emergency slots are non-refundable once booked.'],
+    ['Rights', 'Usage rights transfer when the final invoice is paid. Third-party items (music, stock, fonts, voice talent) follow their own licences.'],
+    ['Late payment', 'Invoices are due within 7 days. Final files are released once the balance is paid.']
+  ],
+
+  /* ---------- project categories (the client picks ONE) ---------- */
+  categories: [
+    {
+      id: 'motion', label: 'Motion design', blurb: 'Explainers, product films, social motion, titles and logo animation', colour: '#03eed8', tiles: [4],
+      base: 150000, min: 45000, rights: true, logistics: ['turnaround', 'revisions', 'brand', 'formats', 'channels', 'territory', 'term', 'portfolio'],
+      questions: [
+        { id: 'variant', type: 'single', label: 'What kind of piece?', options: [
+          { id: 'explainer', label: 'Explainer', def: true }, { id: 'product', label: 'Product or app film', m: 1.1 },
+          { id: 'social', label: 'Social ad or reel', m: 0.95 }, { id: 'kinetic', label: 'Kinetic type or lyric video', m: 0.85 },
+          { id: 'ui', label: 'UI or app walkthrough', m: 1 }, { id: 'data', label: 'Data or infographic film', m: 1.1 },
+          { id: 'titles', label: 'Title sequence or opener', m: 1.25 }, { id: 'logo', label: 'Logo animation or sting', m: 1.3 },
+          { id: 'broadcast', label: 'Broadcast package (bumpers, lower thirds)', m: 1.15 }, { id: 'stage', label: 'Event or stage screen visuals', m: 1 }
+        ] },
+        { id: 'blend', type: 'multi', label: 'Mixed with anything else?', hint: 'For mixed projects. Choose all that apply.', options: [
+          { id: 'footage', label: 'Live-action footage', m: 1.15 }, { id: '3d', label: '3D elements', m: 1.35 },
+          { id: 'char', label: 'Character animation', m: 1.4 }, { id: 'vfx', label: 'Compositing or VFX', m: 1.2 },
+          { id: 'screen', label: 'Screen recordings', m: 1.05 }
+        ] },
+        { id: 'length', type: 'range', label: 'Length', unit: 's', min: 5, max: 600, step: 5, def: 120, scale: { ref: 135, exp: 0.85 } },
+        { id: 'style', type: 'single', label: 'Visual style', options: [
+          { id: 'minimal', label: 'Minimal and typographic', m: 0.9 }, { id: 'flat', label: 'Clean flat 2D', def: true },
+          { id: 'collage', label: 'Photo collage or mixed media', m: 1.1 }, { id: 'depth', label: '2.5D with depth and camera moves', m: 1.2 },
+          { id: 'rich', label: 'Richly illustrated', m: 1.25 }, { id: 'cine', label: 'Premium cinematic', m: 1.5 },
+          { id: 'ns', label: 'Not sure yet', u: 1 }
+        ] },
+        { id: 'complexity', type: 'single', label: 'How much is happening on screen?', options: [
+          { id: 'simple', label: 'Simple: a few elements, gentle moves', m: 0.8 }, { id: 'mod', label: 'Moderate', def: true },
+          { id: 'detail', label: 'Detailed: many layers, tight timing', m: 1.3 }, { id: 'dense', label: 'Very detailed throughout', m: 1.6 },
+          { id: 'ns', label: 'Not sure', u: 1 }
+        ] },
+        { id: 'assets', type: 'assets', label: 'What do you already have?', hint: 'The base price assumes you supply everything and I animate.', items: [
+          { id: 'script', label: 'Script', need: { p: 0.12, line: 'Scriptwriting' } },
+          { id: 'design', label: 'Designed frames or illustrations', need: { p: 0.45, line: 'Design and illustration' } },
+          { id: 'board', label: 'Storyboard', need: { p: 0.12, line: 'Storyboard' } },
+          { id: 'vo', label: 'Voiceover', need: { pass: 30000, perMin: true, line: 'Voice talent' } },
+          { id: 'music', label: 'Music', need: { pass: 25000, line: 'Licensed music' } },
+          { id: 'sfx', label: 'Sound design', need: { p: 0.1, line: 'Sound design' } },
+          { id: 'logo', label: 'Logo and brand files', need: { a: 15000, line: 'Logo clean-up' } },
+          { id: 'footage', label: 'Footage or screenshots', need: { pass: 30000, line: 'Stock footage' } }
+        ] }
+      ]
+    },
+    {
+      id: 'anim2d', label: '2D animation', blurb: 'Character animation, stories, series and kids content', colour: '#038eee', tiles: [3, 4, 5],
+      base: 350000, min: 120000, rights: true, logistics: ['turnaround', 'revisions', 'brand', 'formats', 'channels', 'territory', 'term', 'portfolio'],
+      questions: [
+        { id: 'variant', type: 'single', label: 'What kind of piece?', options: [
+          { id: 'explainer', label: 'Character explainer', def: true }, { id: 'story', label: 'Short story or film', m: 1.15 },
+          { id: 'series', label: 'Series episode', m: 1.05 }, { id: 'pilot', label: 'Series pilot (sets up the look)', m: 1.3 },
+          { id: 'kids', label: 'Kids or Bible-story content', m: 1 }, { id: 'mv', label: 'Music video', m: 1.1 }, { id: 'ad', label: 'Advert', m: 1.1 }
+        ] },
+        { id: 'blend', type: 'multi', label: 'Mixed with anything else?', options: [
+          { id: 'motion', label: 'Motion graphics', m: 1.1 }, { id: 'footage', label: 'Live-action footage', m: 1.2 }, { id: '3d', label: '3D backgrounds or props', m: 1.25 }
+        ] },
+        { id: 'length', type: 'range', label: 'Length', unit: 's', min: 5, max: 900, step: 5, def: 60, scale: { ref: 60, exp: 0.9 } },
+        { id: 'technique', type: 'single', label: 'Technique', options: [
+          { id: 'motioncomic', label: 'Motion comic (minimal movement)', m: 0.65 }, { id: 'cutout', label: 'Cut-out', m: 0.9 },
+          { id: 'rig', label: 'Rigged puppet', def: true }, { id: 'hybrid', label: 'Rigged with hand-drawn moments', m: 1.5 },
+          { id: 'fbf', label: 'Frame by frame', m: 2.2 }, { id: 'ns', label: 'Not sure', u: 1 }
+        ] },
+        { id: 'chars', type: 'range', label: 'Main characters', unit: '', min: 1, max: 10, step: 1, def: 2, scale: { ref: 2, exp: 0.3 } },
+        { id: 'extras', type: 'multi', label: 'Also needed', options: [
+          { id: 'lip', label: 'Lip-sync', m: 1.2 }, { id: 'crowd', label: 'Crowd scenes', m: 1.15 }, { id: 'fx', label: 'Effects (water, fire, smoke)', m: 1.15 }
+        ] },
+        { id: 'complexity', type: 'single', label: 'Scene complexity', options: [
+          { id: 'simple', label: 'Simple', m: 0.8 }, { id: 'mod', label: 'Moderate', def: true }, { id: 'detail', label: 'Detailed', m: 1.35 }, { id: 'ns', label: 'Not sure', u: 1 }
+        ] },
+        { id: 'assets', type: 'assets', label: 'What do you already have?', items: [
+          { id: 'script', label: 'Script', need: { p: 0.1, line: 'Scriptwriting' } },
+          { id: 'chardes', label: 'Character designs', need: { p: 0.25, line: 'Character design' } },
+          { id: 'bg', label: 'Backgrounds', need: { p: 0.25, line: 'Background design' } },
+          { id: 'board', label: 'Storyboard and animatic', need: { p: 0.18, line: 'Storyboard and animatic' } },
+          { id: 'vo', label: 'Voice cast', need: { pass: 45000, perMin: true, line: 'Voice cast' } },
+          { id: 'music', label: 'Music', need: { pass: 25000, line: 'Licensed music' } },
+          { id: 'sfx', label: 'Sound design', need: { p: 0.1, line: 'Sound design' } }
+        ] }
+      ]
+    },
+    {
+      id: 'anim3d', label: '3D animation', blurb: 'Product visualisation, launch films and 3D scenes', colour: '#a57bff', tiles: [0, 4, 8],
+      base: 400000, min: 120000, rights: true, logistics: ['turnaround', 'revisions', 'brand', 'formats', 'channels', 'territory', 'term', 'portfolio'],
+      questions: [
+        { id: 'variant', type: 'single', label: 'What kind of piece?', options: [
+          { id: 'turn', label: 'Product turntable or hero shots', m: 0.75 }, { id: 'launch', label: 'Product launch film', def: true },
+          { id: 'arch', label: 'Architecture or interior', m: 1.1 }, { id: 'abstract', label: 'Abstract loops or visuals', m: 0.85 },
+          { id: 'char', label: '3D character animation', m: 1.6 }, { id: 'phone', label: 'App on a 3D phone (like ChimpX)', m: 0.9 }
+        ] },
+        { id: 'blend', type: 'multi', label: 'Mixed with anything else?', options: [
+          { id: 'motion', label: '2D motion graphics', m: 1.1 }, { id: 'footage', label: 'Live-action footage (CG integration)', m: 1.35 }
+        ] },
+        { id: 'length', type: 'range', label: 'Length', unit: 's', min: 5, max: 300, step: 5, def: 30, scale: { ref: 30, exp: 0.8 } },
+        { id: 'model', type: 'single', label: 'Models', options: [
+          { id: 'have', label: 'You supply 3D models or CAD', def: true }, { id: 'simple', label: 'I model simple objects', p: 0.3, line: '3D modelling' },
+          { id: 'complex', label: 'I model complex products or sets', p: 0.65, line: 'Detailed 3D modelling' }, { id: 'ns', label: 'Not sure', p: 0.3, u: 1, line: '3D modelling' }
+        ] },
+        { id: 'look', type: 'single', label: 'Look', options: [
+          { id: 'clay', label: 'Stylised or clay', m: 0.9 }, { id: 'clean', label: 'Clean studio', def: true }, { id: 'real', label: 'Realistic', m: 1.3 }, { id: 'photo', label: 'Photoreal hero', m: 1.7 }
+        ] },
+        { id: 'sim', type: 'multi', label: 'Simulations', options: [
+          { id: 'cloth', label: 'Cloth', m: 1.15 }, { id: 'fluid', label: 'Liquids', m: 1.25 }, { id: 'part', label: 'Particles or smoke', m: 1.15 }
+        ] },
+        { id: 'res', type: 'single', label: 'Render resolution', options: [
+          { id: 'hd', label: '1080p', def: true }, { id: '4k', label: '4K', m: 1.2 }
+        ] },
+        { id: 'assets', type: 'assets', label: 'What do you already have?', items: [
+          { id: 'board', label: 'Storyboard or shot list', need: { p: 0.1, line: 'Storyboard' } },
+          { id: 'mats', label: 'Material and colour references', need: { a: 20000, line: 'Look development' } },
+          { id: 'music', label: 'Music', need: { pass: 25000, line: 'Licensed music' } },
+          { id: 'sfx', label: 'Sound design', need: { p: 0.08, line: 'Sound design' } }
+        ] }
+      ]
+    },
+    {
+      id: 'film', label: 'Film and video production', blurb: 'Directing and shooting commercials, short films, documentaries, events and church media', colour: '#d903ee', tiles: [0, 4, 8],
+      base: 0, min: 120000, rights: true, logistics: ['turnaround', 'revisions', 'brand', 'formats', 'channels', 'territory', 'term', 'portfolio'],
+      questions: [
+        { id: 'variant', type: 'single', label: 'What are we making?', options: [
+          { id: 'brand', label: 'Brand or corporate film', b: 350000, def: true }, { id: 'ad', label: 'Commercial', b: 420000 },
+          { id: 'mv', label: 'Music video', b: 350000 }, { id: 'doc', label: 'Documentary short', b: 450000 },
+          { id: 'short', label: 'Short film (narrative)', b: 600000 }, { id: 'testi', label: 'Interviews or testimonials', b: 200000 },
+          { id: 'event', label: 'Event coverage or highlight', b: 180000 }, { id: 'church', label: 'Church or worship media', b: 150000 }
+        ] },
+        { id: 'blend', type: 'multi', label: 'Mixed with anything else?', options: [
+          { id: 'motion', label: 'Motion graphics', m: 1.2 }, { id: 'anim', label: 'Animated sequences', m: 1.3 }, { id: 'vfx', label: 'VFX shots', m: 1.25 },
+          { id: 'drone', label: 'Drone shots', pass: 80000, perDay: true, line: 'Drone operator' }, { id: 'live', label: 'Live stream', pass: 150000, line: 'Live-stream setup' }
+        ] },
+        { id: 'length', type: 'range', label: 'Finished length', unit: 's', min: 15, max: 1800, step: 15, def: 90, scale: { ref: 90, exp: 0.35 } },
+        { id: 'days', type: 'range', label: 'Shoot days', unit: 'd', min: 0.5, max: 10, step: 0.5, def: 1, scale: { ref: 1, exp: 0.8 } },
+        { id: 'crew', type: 'single', label: 'Crew size', options: [
+          { id: 'solo', label: 'Just me (director and camera)', m: 0.8 }, { id: 'small', label: 'Small crew (3–5)', def: true },
+          { id: 'full', label: 'Full crew (6–12)', m: 1.6 }, { id: 'large', label: 'Large production', m: 2.4, u: 1 }
+        ] },
+        { id: 'kit', type: 'single', label: 'Camera and lighting', options: [
+          { id: 'mine', label: 'Standard kit', def: true }, { id: 'cine', label: 'Cinema camera package', pass: 150000, perDay: true, line: 'Cinema camera rental' },
+          { id: 'high', label: 'High-end package (lenses, lighting, grip)', pass: 400000, perDay: true, line: 'High-end equipment rental' }
+        ] },
+        { id: 'cast', type: 'single', label: 'On-screen talent', options: [
+          { id: 'none', label: 'Real people or your team', def: true }, { id: 'few', label: '1–3 actors', pass: 120000, perDay: true, line: 'Actors' },
+          { id: 'many', label: '4–10 actors', pass: 350000, perDay: true, line: 'Cast' }, { id: 'call', label: 'Casting call needed', a: 80000, pass: 150000, perDay: true, line: 'Casting and cast' }
+        ] },
+        { id: 'loc', type: 'single', label: 'Locations', options: [
+          { id: 'l1', label: 'One location', def: true }, { id: 'l2', label: '2–3 locations', m: 1.15 }, { id: 'l4', label: '4 or more', m: 1.3 },
+          { id: 'studio', label: 'Studio rental', pass: 150000, perDay: true, line: 'Studio rental' }
+        ] },
+        { id: 'where', type: 'single', label: 'Where is the shoot?', options: [
+          { id: 'lagos', label: 'Lagos', def: true }, { id: 'ng', label: 'Elsewhere in Nigeria', pass: 150000, line: 'Travel and lodging' },
+          { id: 'intl', label: 'Outside Nigeria', pass: 600000, u: 2, line: 'International travel (quoted separately)' }
+        ] },
+        { id: 'post', type: 'multi', label: 'Post-production', hint: 'A standard edit is included.', options: [
+          { id: 'grade', label: 'Colour grade', p: 0.1, line: 'Colour grade' }, { id: 'mix', label: 'Sound design and mix', p: 0.1, line: 'Sound mix' },
+          { id: 'score', label: 'Original music', pass: 150000, line: 'Composer' }
+        ] },
+        { id: 'assets', type: 'assets', label: 'What do you already have?', items: [
+          { id: 'script', label: 'Script or treatment', need: { p: 0.12, line: 'Script and treatment' } },
+          { id: 'board', label: 'Storyboard or shot list', need: { p: 0.08, line: 'Storyboard' } },
+          { id: 'permits', label: 'Location permits', need: { pass: 50000, line: 'Permits' } },
+          { id: 'wardrobe', label: 'Wardrobe and props', need: { pass: 60000, line: 'Wardrobe and props' } },
+          { id: 'music', label: 'Music', need: { pass: 30000, line: 'Licensed music' } }
+        ] }
+      ]
+    },
+    {
+      id: 'edit', label: 'Editing and post', blurb: 'Edits from your footage: social, YouTube, promos, events and sermons', colour: '#ffa800', tiles: [0, 2, 6, 8],
+      base: 45000, min: 25000, rights: false, logistics: ['turnaround', 'revisions', 'brand', 'formats', 'portfolio'],
+      questions: [
+        { id: 'variant', type: 'single', label: 'What kind of edit?', options: [
+          { id: 'social', label: 'Social reel or short', m: 1 }, { id: 'yt', label: 'YouTube or long-form', def: true },
+          { id: 'promo', label: 'Promo or corporate', m: 1.2 }, { id: 'doc', label: 'Documentary', m: 1.4 },
+          { id: 'event', label: 'Event highlight', m: 1.05 }, { id: 'talk', label: 'Podcast or talking head', m: 0.7 },
+          { id: 'sermon', label: 'Sermon or service', m: 0.6 }, { id: 'mv', label: 'Music video', m: 1.25 }, { id: 'trailer', label: 'Trailer', m: 1.3 }
+        ] },
+        { id: 'length', type: 'range', label: 'Finished length', unit: 's', min: 15, max: 3600, step: 15, def: 300, scale: { ref: 120, exp: 0.75 } },
+        { id: 'footage', type: 'range', label: 'Raw footage', unit: 'h', min: 0.5, max: 40, step: 0.5, def: 2, scale: { ref: 2, exp: 0.3 } },
+        { id: 'extras', type: 'multi', label: 'Also needed', options: [
+          { id: 'story', label: 'Find the story (no script)', m: 1.2 }, { id: 'multicam', label: 'Multicam sync', m: 1.15 },
+          { id: 'grade', label: 'Colour grade', p: 0.2, line: 'Colour grade' }, { id: 'audio', label: 'Audio clean-up and mix', p: 0.15, line: 'Audio mix' },
+          { id: 'titles', label: 'Motion titles and lower thirds', p: 0.15, line: 'Motion titles' }, { id: 'thumb', label: 'Thumbnail', a: 15000, line: 'Thumbnail' }
+        ] },
+        { id: 'assets', type: 'assets', label: 'What do you already have?', items: [
+          { id: 'music', label: 'Music', need: { pass: 20000, line: 'Licensed music' } },
+          { id: 'broll', label: 'B-roll', need: { pass: 30000, line: 'Stock B-roll' } },
+          { id: 'gfx', label: 'Brand graphics pack', need: { a: 30000, line: 'Graphics pack' } }
+        ] }
+      ]
+    },
+    {
+      id: 'vfx', label: 'Colour and VFX', blurb: 'Grading, compositing, tracking, clean-up and screen replacement', colour: '#eed903', tiles: [0, 2, 4, 6, 8],
+      base: 0, min: 30000, rights: false, logistics: ['turnaround', 'revisions', 'formats', 'portfolio'],
+      questions: [
+        { id: 'variant', type: 'single', label: 'Main job', hint: 'Price is per shot.', options: [
+          { id: 'grade', label: 'Colour grade', b: 8000, def: true }, { id: 'comp', label: 'Green screen or compositing', b: 30000 },
+          { id: 'track', label: 'Tracking and screen replacement', b: 22000 }, { id: 'clean', label: 'Clean-up or object removal', b: 25000 },
+          { id: 'ext', label: 'Sky or set extension', b: 40000 }, { id: 'beauty', label: 'Beauty or retouch', b: 20000 }, { id: 'cg', label: 'CG integration', b: 60000 }
+        ] },
+        { id: 'blend', type: 'multi', label: 'Also in the same shots', options: [
+          { id: 'grade', label: 'Grade', m: 1.15 }, { id: 'comp', label: 'Compositing', m: 1.3 }, { id: 'track', label: 'Tracking', m: 1.2 }, { id: 'clean', label: 'Clean-up', m: 1.2 }
+        ] },
+        { id: 'shots', type: 'range', label: 'Number of shots', unit: 'shots', min: 1, max: 300, step: 1, def: 20, scale: { ref: 1, exp: 0.9 } },
+        { id: 'difficulty', type: 'single', label: 'Difficulty', options: [
+          { id: 'easy', label: 'Easy', m: 0.7 }, { id: 'mod', label: 'Moderate', def: true }, { id: 'hard', label: 'Hard', m: 1.6 }, { id: 'hero', label: 'Hero shots', m: 2.5 }, { id: 'ns', label: 'Not sure', u: 1 }
+        ] },
+        { id: 'plates', type: 'single', label: 'Footage quality', options: [
+          { id: 'good', label: 'Well shot (log, clean)', def: true }, { id: 'ok', label: 'Average', m: 1.2 }, { id: 'poor', label: 'Difficult (noise, motion blur, phone)', m: 1.5 }
+        ] },
+        { id: 'look', type: 'multi', label: 'Look development', options: [
+          { id: 'lut', label: 'Custom LUT or show look', a: 60000, line: 'Look development' }, { id: 'hdr', label: 'HDR deliverable', p: 0.2, line: 'HDR master' }
+        ] }
+      ]
+    },
+    {
+      id: 'identity', label: 'Brand identity', blurb: 'Logos, identity systems, guidelines and rebrands', colour: '#6403ee', tiles: [1, 4],
+      base: 0, min: 120000, rights: false, logistics: ['turnaround', 'revisions', 'portfolio'],
+      questions: [
+        { id: 'variant', type: 'single', label: 'Scope', options: [
+          { id: 'logo', label: 'Logo only', b: 180000 }, { id: 'basic', label: 'Logo and basic identity', b: 350000, def: true },
+          { id: 'system', label: 'Full identity system', b: 650000 }, { id: 'rebrand', label: 'Rebrand of an existing identity', b: 480000 },
+          { id: 'motion', label: 'Identity with motion identity', b: 950000 }
+        ] },
+        { id: 'blend', type: 'multi', label: 'Add motion?', options: [
+          { id: 'logoanim', label: 'Logo animation', a: 90000, line: 'Logo animation' }, { id: 'kit', label: 'Social motion templates', a: 120000, line: 'Motion templates' }
+        ] },
+        { id: 'concepts', type: 'single', label: 'Initial concepts', options: [
+          { id: 'c2', label: '2 directions', def: true }, { id: 'c3', label: '3 directions', m: 1.15 }, { id: 'c5', label: '5 directions', m: 1.35 }
+        ] },
+        { id: 'research', type: 'single', label: 'Strategy', options: [
+          { id: 'none', label: 'You have a clear brief', def: true }, { id: 'light', label: 'A short workshop', a: 60000, line: 'Brand workshop' },
+          { id: 'full', label: 'Full strategy (audience, positioning)', p: 0.3, line: 'Brand strategy' }
+        ] },
+        { id: 'guide', type: 'single', label: 'Guidelines', options: [
+          { id: 'one', label: 'One-page sheet', def: true }, { id: 'std', label: 'Standard guide (about 20 pages)', p: 0.15, line: 'Brand guidelines' },
+          { id: 'full', label: 'Comprehensive brand book', p: 0.35, line: 'Brand book' }
+        ] },
+        { id: 'apps', type: 'multi', label: 'Applications', options: [
+          { id: 'stat', label: 'Business cards and stationery', a: 40000, line: 'Stationery' }, { id: 'social', label: 'Social templates', a: 60000, line: 'Social templates' },
+          { id: 'deck', label: 'Presentation template', a: 90000, line: 'Presentation template' }, { id: 'sign', label: 'Signage and merch', a: 50000, line: 'Signage and merch' },
+          { id: 'pack', label: 'Packaging', a: 120000, line: 'Packaging' }, { id: 'web', label: 'Website style', a: 120000, line: 'Website style' },
+          { id: 'name', label: 'Naming', a: 150000, line: 'Naming' }
+        ] },
+        { id: 'assets', type: 'assets', label: 'What do you already have?', items: [
+          { id: 'brief', label: 'Written brief', need: { a: 20000, line: 'Brief writing' } },
+          { id: 'name', label: 'Final name', need: { u: 1 } },
+          { id: 'fonts', label: 'Font licences', need: { pass: 60000, line: 'Font licences' } },
+          { id: 'photo', label: 'Photography', need: { pass: 80000, line: 'Stock or commissioned photos' } }
+        ] }
+      ]
+    },
+    {
+      id: 'motionsys', label: 'Motion identity and templates', blurb: 'Motion systems, channel kits, Essential Graphics and automated templates', colour: '#03ee63', tiles: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+      base: 0, min: 60000, rights: false, logistics: ['turnaround', 'revisions', 'brand', 'portfolio'],
+      questions: [
+        { id: 'variant', type: 'single', label: 'Scope', options: [
+          { id: 'logo', label: 'Logo animation only', b: 90000 }, { id: 'yt', label: 'Channel kit (intro, end screen, lower thirds)', b: 280000, def: true },
+          { id: 'toolkit', label: 'Motion toolkit (titles, transitions, lower thirds)', b: 320000 }, { id: 'event', label: 'Event or broadcast package', b: 450000 },
+          { id: 'system', label: 'Full motion identity with guidelines', b: 650000 }
+        ] },
+        { id: 'elements', type: 'range', label: 'Template elements', unit: '', min: 1, max: 40, step: 1, def: 8, scale: { ref: 8, exp: 0.6 } },
+        { id: 'format', type: 'multi', label: 'Template formats', hint: 'After Effects project is included.', options: [
+          { id: 'mogrt', label: 'Premiere Essential Graphics', p: 0.2, line: 'Essential Graphics' }, { id: 'resolve', label: 'DaVinci Resolve', p: 0.25, line: 'Resolve templates' },
+          { id: 'canva', label: 'Canva or CapCut friendly', p: 0.15, line: 'Canva or CapCut versions' }, { id: 'auto', label: 'Automated (script- or data-driven)', p: 0.5, line: 'Automation' }
+        ] },
+        { id: 'complexity', type: 'single', label: 'Motion complexity', options: [
+          { id: 'simple', label: 'Simple', m: 0.8 }, { id: 'mod', label: 'Moderate', def: true }, { id: 'detail', label: 'Detailed', m: 1.3 }
+        ] },
+        { id: 'extras', type: 'multi', label: 'Also needed', options: [
+          { id: 'train', label: 'Training session for your team', a: 40000, line: 'Team training' }, { id: 'guide', label: 'Motion guidelines', p: 0.15, line: 'Motion guidelines' },
+          { id: 'sound', label: 'Sonic logo or sound set', a: 60000, line: 'Sound set' }
+        ] }
+      ]
+    },
+    {
+      id: 'artdir', label: 'Art direction', blurb: 'Creative direction, style frames, treatments and production design', colour: '#d903ee', tiles: [1, 3, 5, 7],
+      base: 95000, min: 60000, rights: false, logistics: ['turnaround', 'revisions', 'brand', 'portfolio'],
+      questions: [
+        { id: 'variant', type: 'single', label: 'What do you need?', options: [
+          { id: 'frames', label: 'Style frames and look development', def: true }, { id: 'campaign', label: 'Campaign art direction', m: 1.2 },
+          { id: 'treat', label: 'Treatment or pitch deck', m: 0.9 }, { id: 'set', label: 'Production design for a shoot', m: 1.1 }, { id: 'brand', label: 'Brand creative direction', m: 1.3 }
+        ] },
+        { id: 'blend', type: 'multi', label: 'Will it lead into…', hint: 'Production can be quoted on its own estimate.', options: [
+          { id: 'motion', label: 'Motion design' }, { id: 'film', label: 'A film shoot' }, { id: 'id', label: 'An identity' }
+        ] },
+        { id: 'days', type: 'range', label: 'Working days (rough)', unit: 'd', min: 1, max: 30, step: 1, def: 4, scale: { ref: 1, exp: 0.95 } },
+        { id: 'deliver', type: 'multi', label: 'Deliverables', options: [
+          { id: 'board', label: 'Mood boards', m: 1 }, { id: 'frames', label: 'Finished style frames', m: 1.1 }, { id: 'deck', label: 'Presentation deck', a: 40000, line: 'Deck design' },
+          { id: 'onset', label: 'On-set supervision', m: 1.15 }
+        ] },
+        { id: 'assets', type: 'assets', label: 'What do you already have?', items: [
+          { id: 'brief', label: 'Brief', need: { a: 20000, line: 'Brief writing' } },
+          { id: 'refs', label: 'References', need: { u: 0 } }
+        ] }
+      ]
+    },
+    {
+      id: 'tools', label: 'Custom tools and training', blurb: 'After Effects and Premiere scripts, panels, pipelines and workshops', colour: '#03ee63', tiles: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+      base: 0, min: 60000, rights: false, logistics: ['turnaround', 'revisions', 'portfolio'],
+      questions: [
+        { id: 'variant', type: 'single', label: 'What do you need?', options: [
+          { id: 'script', label: 'After Effects script', b: 150000, def: true }, { id: 'panel', label: 'After Effects panel (with interface)', b: 450000 },
+          { id: 'pipe', label: 'Template automation pipeline', b: 600000 }, { id: 'plugin', label: 'Premiere or Resolve plugin', b: 500000 },
+          { id: 'workshop', label: 'Workshop (one session)', b: 120000 }, { id: 'course', label: 'Course (several sessions)', b: 450000 }
+        ] },
+        { id: 'complexity', type: 'single', label: 'Complexity', options: [
+          { id: 'simple', label: 'Simple', m: 0.7 }, { id: 'mod', label: 'Moderate', def: true }, { id: 'adv', label: 'Advanced', m: 1.6 }, { id: 'ns', label: 'Not sure', u: 1 }
+        ] },
+        { id: 'platforms', type: 'multi', label: 'Platforms', options: [
+          { id: 'both', label: 'macOS and Windows', m: 1.1 }, { id: 'multi', label: 'More than one app', m: 1.25 }
+        ] },
+        { id: 'people', type: 'range', label: 'People using it or attending', unit: '', min: 1, max: 200, step: 1, def: 5, scale: { ref: 5, exp: 0.12 } },
+        { id: 'extras', type: 'multi', label: 'Also needed', options: [
+          { id: 'docs', label: 'Documentation and video guide', a: 40000, line: 'Docs and guide' }, { id: 'support', label: '3 months of support', p: 0.15, line: 'Support' },
+          { id: 'onsite', label: 'In person (Lagos)', pass: 40000, line: 'Travel' }
+        ] }
+      ]
+    }
+  ],
+
+  /* copy shown on the page */
+  copy: {
+    honest: 'Please answer as accurately as you can. Prices are set by where your business is based, its size and its budget. If details are understated to bring the figure down, the final quote will be corrected after the discovery call, so an honest answer gets you a figure you can plan with.',
+    estimate: 'This is an estimate, not a quote. The final price is set after a discovery call, a look at the full scope and a written brief, and it may go up or down.',
+    budgetLow: 'Your budget is below this range. On the call we can bring it closer: a shorter piece, a simpler style, or assets you supply.',
+    budgetFits: 'Your budget sits within this range.',
+    budgetHigh: 'Your budget is above this range, so there is room for extras such as more formats or a richer style.'
+  }
+};

@@ -52,3 +52,15 @@ Visitors sign up on the home page (`#updates`), /soon and every /tools page. Dou
 - Other providers: also set `SMTP_HOST`, `SMTP_PORT` (465 or 587), `SMTP_USER`, `NEWSLETTER_FROM`.
 - Gmail sends to about 500 recipients a day. A send that hits the limit pauses; press Resume under "Sent" the next day.
 - Public endpoints: `POST /api/subscribe`, `POST /api/confirm`, `GET|POST /api/unsubscribe`. Status page: `/newsletter/`.
+
+## Live rate card (/rate-card/) and Book a project (/book/)
+A budget calculator that sits off the main page, reachable by direct link (also linked from Contact and the FAQ). Not indexed for now.
+- **All prices, tiers, markets, currencies, policies and wording live in `rate-card/rates.js`.** The top of that file explains the maths and the option effects (`m`, `b`, `p`, `a`, `pass`, `u`, `when`). `app.js` never needs changing for a price update; bump `version` when you change prices (it clears visitors' saved answers).
+- Anchor: a standard-tier motion video of 90–180 s, motion only, all assets supplied, comes out at ₦80,000–₦250,000. Every other price is relative to that.
+- Exchange rates are in `currencies` (`fx` = naira per unit). Market price levels are in `markets` (`level`, Nigeria = 1). Update FX when the naira moves.
+- Check any scenario in the browser console: `DPRC.compute()` and `DPRC.report()`.
+- **Email my estimate** posts to `/api/estimate`: saves the estimate in D1 (`rc_estimates`, same `NEWS_DB`) and emails the report to `NEWSLETTER_OWNER` (default the newsletter address) with Reply-To set to the client. Until `SMTP_PASS` is set, the page sends the same report through Web3Forms (the contact-form key), and as a last resort opens the visitor's email app. The send button only works once the consent box is ticked.
+- After sending, a splash points to **/book/**, the standalone brief form. It carries the estimate reference, name, email, budget and links over, and sends through Web3Forms like the home page form.
+- **Optional helper** (`/api/rate-ai`): off unless `ANTHROPIC_API_KEY` is set (optional `RATE_AI_MODEL`, `RATE_AI=off`). When on, it asks up to three extra questions on the Plan step and reads reference images, short clips (three frames taken in the browser) and links, then suggests matching options. Images are held in memory for that one request and never stored. If it's off or failing, those parts simply don't appear.
+- **Insights log:** every helper call writes a short note (no names, emails or images) to `rc_insights`. Pull it at `/brand/rate-insights` (sign in at /brand first): `?type=insights|estimates`, `&format=csv`, `&days=90`.
+- Tables are created on first use; schema copy in `migrations/0002_rate_card.sql`.
