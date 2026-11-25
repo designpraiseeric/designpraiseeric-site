@@ -24,7 +24,17 @@
   /* ---------------- lookups ---------------- */
   var market = function () { return R.markets.find(function (m) { return m.id === S.market; }); };
   var cat = function () { return R.categories.find(function (c) { return c.id === S.cat; }); };
-  var curInfo = function () { var m = market(); var id = S.cur || (m ? m.def : 'NGN'); return Object.assign({ id: id }, R.currencies[id]); };
+  var FX = { live: {}, at: null, source: '' };
+  function fxFor(id) {
+    var c = R.currencies[id], ref = c.fx, L = FX.live[id], r = R.fxRules || {};
+    if (id === 'NGN' || !r.live || !L || Math.abs(L / ref - 1) > r.maxMove) return { fx: ref, how: 'reference' };
+    var foreign = S.market && S.market !== 'ng';
+    if (foreign && r.foreignFloor) return L < ref ? { fx: L, how: 'live' } : { fx: ref, how: 'reference (naira weaker than reference)' };
+    if (!foreign && r.nigeriaLive === false) return { fx: ref, how: 'reference' };
+    return { fx: L, how: 'live' };
+  }
+  var curInfo = function () { var m = market(); var id = S.cur || (m ? m.def : 'NGN'); var f = fxFor(id); return Object.assign({ id: id }, R.currencies[id], { fx: f.fx, how: f.how }); };
+  function fxLine(cur) { if (cur.id === 'NGN') return ''; return cur.symbol + '1 = ₦' + Math.round(cur.fx).toLocaleString('en-GB') + ' (' + cur.how + (cur.how === 'live' && FX.at ? ', ' + new Date(FX.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '') + ')'; }
   function optsOf(q) { if (Array.isArray(q.options)) return q.options; var m = market(); return q.options[m ? m.revenue : 'ngn']; }
   function logistics(c) { return (c.logistics || []).map(function (id) { return id === 'formats' ? R.shared.videoFormats : R.shared[id]; }).filter(Boolean); }
   function defaultOf(q) {
@@ -95,11 +105,12 @@
     var disc = Math.max(vd, ret.off || 0), discFrom = (ret.off || 0) > vd ? 'retainer' : 'volume';
     var payOff = (R.payPref.options.find(function (o) { return o.id === S.plan.pay; }) || {}).off || 0;
     var work1 = production + sum(lines), pass1 = sum(pass);
-    var rows = [];
-    rows.push({ label: n > 1 ? 'Production × ' + n : 'Production', v: production * n * L });
-    lines.forEach(function (l) { rows.push({ label: l.label + (n > 1 ? ' × ' + n : ''), v: l.v * n * L }); });
-    if (disc) rows.push({ label: (discFrom === 'retainer' ? 'Retainer saving' : 'Volume saving') + ' (' + Math.round(disc * 100) + '%)', v: -work1 * n * disc * L, neg: true });
-    if (tm !== 1) rows.push({ label: 'Pricing tier: ' + T.t.label + ' (' + (tm > 1 ? '+' : '−') + Math.round(Math.abs(tm - 1) * 100) + '%)', v: work1 * n * (1 - disc) * (tm - 1) * L, neg: tm < 1 });
+    /* Tier premiums are folded into each line; tier discounts are shown as their own line. */
+    var rows = [], up = tm > 1 ? tm : 1;
+    rows.push({ label: n > 1 ? 'Production × ' + n : 'Production', v: production * n * L * up });
+    lines.forEach(function (l) { rows.push({ label: l.label + (n > 1 ? ' × ' + n : ''), v: l.v * n * L * up }); });
+    if (disc) rows.push({ label: (discFrom === 'retainer' ? 'Retainer saving' : 'Volume saving') + ' (' + Math.round(disc * 100) + '%)', v: -work1 * n * disc * L * up, neg: true });
+    if (tm < 1) rows.push({ label: T.t.label + ' discount (' + Math.round((1 - tm) * 100) + '%)', v: work1 * n * (1 - disc) * (tm - 1) * L, neg: true });
     pass.forEach(function (l) { rows.push({ label: l.label + ' (third party)' + (n > 1 ? ' × ' + n : ''), v: l.v * n * L }); });
     var pre = (work1 * n * (1 - disc) * tm + pass1 * n) * L;
     if (payOff) rows.push({ label: 'Paid in full upfront (' + Math.round(payOff * 100) + '%)', v: -pre * payOff, neg: true });
@@ -207,7 +218,7 @@
     h += '<div class="more" id="aiMore" hidden></div>';
     h += '<div class="more" id="refs"><div><div class="ql" style="font-weight:650">References (optional)</div><p class="qh" style="margin-top:4px">Films, styles or brands you like. Links are sent with your estimate.</p></div>' +
       '<label class="fl">Links<textarea id="refLinks" placeholder="One link per line">' + esc(S.refs.links) + '</textarea></label>' +
-      '<div id="refFiles" hidden><label class="drop" id="drop"><input type="file" id="refFile" accept="image/*,video/*" multiple><b style="color:var(--ink)">Add images or short clips</b><span>Up to 4. Looked at once to understand the style, then discarded. Nothing is stored or sent with the estimate.</span></label><div class="thumbs" id="thumbs"></div></div>' +
+      '<div id="refFiles" hidden><label class="drop" id="drop"><input type="file" id="refFile" accept="image/*,video/*" multiple><b style="color:var(--ink)">Add images or short clips</b><span>Up to 4. Looked at once to understand the style, then discarded. Nothing is kept on this site or sent with the estimate.</span></label><div class="thumbs" id="thumbs"></div></div>' +
       '<div class="read" id="refRead" aria-live="polite"></div></div>';
     return stepShell(4, 'Plan and budget', 'Volume, ongoing work, how you’d like to pay, and the budget you have in mind.', h);
   }
@@ -330,7 +341,7 @@
   /* ---------------- tier line ---------------- */
   function updateTier() {
     var el = $('tierline'); if (!el) return; var T = tierInfo();
-    el.innerHTML = T.known ? '<span class="pill">' + esc(T.t.label) + '</span><span><b>' + esc(T.t.note) + '.</b> ' + (T.t.m === 1 ? 'Standard pricing.' : (T.t.m < 1 ? Math.round((1 - T.t.m) * 100) + '% below standard.' : Math.round((T.t.m - 1) * 100) + '% above standard.')) + '</span>' : '<span class="mute">Your pricing tier will show here.</span>';
+    el.innerHTML = T.known ? '<span class="pill">' + esc(T.t.label) + '</span><span><b>' + esc(T.t.note) + '.</b> ' + (T.t.m < 1 ? Math.round((1 - T.t.m) * 100) + '% off standard pricing.' : T.t.m === 1 ? 'Standard pricing.' : 'Pricing reflects the scale of your organisation.') + '</span>' : '<span class="mute">Your pricing tier will show here.</span>';
   }
 
   /* ---------------- estimate panel ---------------- */
@@ -352,7 +363,7 @@
     if (bv) { var bn = bv * cur.fx; bmsg = bn < E.lo ? R.copy.budgetLow : bn > E.hi ? R.copy.budgetHigh : R.copy.budgetFits; }
     var bm = $('budgetMsg'); if (bm) { bm.hidden = !bmsg; bm.textContent = bmsg; bm.className = 'budget' + (bv && bv * cur.fx < E.lo ? ' low' : ''); }
     est.innerHTML = head + '<div class="tot" id="tot">' + rangeHTML(E, cur) + '</div><p class="sub">' + esc(E.c.label) + (E.n > 1 ? ' · ' + E.n + ' pieces' : '') + (E.unsure ? ' · range widened for “not sure” answers' : '') + '</p>' + curBtns + '</div>' +
-      '<div class="bd">' + rows + '<div class="kv"><b>Timeline</b><span>' + esc(E.timeline) + '</span><b>Revisions</b><span>' + esc((R.shared.revisions.options.find(function (o) { return o.id === val(E.c, R.shared.revisions); }) || {}).label || '') + '</span><b>Market</b><span>' + esc(E.m.label) + '</span></div>' + pay + ret +
+      '<div class="bd">' + rows + '<div class="kv"><b>Timeline</b><span>' + esc(E.timeline) + '</span><b>Revisions</b><span>' + esc((R.shared.revisions.options.find(function (o) { return o.id === val(E.c, R.shared.revisions); }) || {}).label || '') + '</span><b>Market</b><span>' + esc(E.m.label) + '</span>' + (cur.id !== 'NGN' ? '<b>Rate</b><span>' + esc(fxLine(cur)) + '</span>' : '') + '</div>' + pay + ret +
       (bmsg ? '<div class="budget' + (bv * cur.fx < E.lo ? ' low' : '') + '">' + esc(bmsg) + '</div>' : '') + '<p class="note">' + esc(R.copy.estimate) + '</p></div>';
     if (tot !== lastTot && lastTot && !reduce) { var t = $('tot'); t.classList.add('tick'); }
     lastTot = tot;
@@ -423,6 +434,7 @@
     if (S.lead.note) L.push('Note: ' + S.lead.note);
     hr('Estimate');
     L.push(E.c.label + ': ' + fmtRange(E, cur) + ' (most likely ' + fmt(E.total, cur) + ')');
+    if (cur.id !== 'NGN') L.push('Exchange rate: ' + fxLine(cur) + ', reference ₦' + R.currencies[cur.id].fx);
     if (cur.id !== 'NGN') L.push('In naira: ' + fmtRange(E, R.currencies.NGN && Object.assign({ id: 'NGN' }, R.currencies.NGN)));
     E.rows.forEach(function (r) { L.push('  ' + r.label + ': ' + fmt(r.v, cur)); });
     L.push('Timeline: ' + E.timeline);
@@ -433,7 +445,7 @@
     if (E.unsure) L.push('“Not sure” answers: ' + E.unsure);
     if (E.floored) L.push('Minimum project fee applied.');
     hr('Tier');
-    L.push(T.t.label + ' (×' + T.t.m + ', score ' + T.pts + ')');
+    L.push(T.t.label + ' (×' + T.t.m + ', score ' + T.pts + ')' + (T.t.m > 1 ? ' — premium folded into the lines the client sees' : ''));
     aboutPairs().forEach(function (p) { L.push(p[0] + ': ' + p[1]); });
     hr('Selections');
     selections().forEach(function (p) { L.push(p[0] + ': ' + p[1]); });
@@ -497,7 +509,7 @@
       .then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
   }
   function aiPing() {
-    fetchT('/api/rate-ai', {}, 2500).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { AI.on = !!(j && j.ok); refsMode(); if (S.step === 4) aiFollow(); }).catch(function () {});
+    fetchT('/api/rate-ai', {}, 2500).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { AI.on = !!(j && j.ok); AI.images = !!(j && j.images); refsMode(); if (S.step === 4) aiFollow(); }).catch(function () {});
   }
   function aiFollow() {
     if (!AI.on || !S.cat || AI.follow.forCat === S.cat) return;
@@ -523,7 +535,7 @@
       if (!had) ACT.aiAnswered++; save(); };
     box.oninput = function (e) { var t = e.target; if (t.dataset.fu == null) return; var q = AI.follow.qs[+t.dataset.fu], had = !!AI.follow.ans[q.id]; AI.follow.ans[q.id] = t.value.slice(0, 300); if (!had && t.value) ACT.aiAnswered++; save(); };
   }
-  function refsMode() { var f = $('refFiles'); if (f) f.hidden = !AI.on; renderRefRead(); }
+  function refsMode() { var f = $('refFiles'); if (f) f.hidden = !(AI.on && AI.images); renderRefRead(); }
   function renderRefRead() {
     var el = $('refRead'); if (!el) return;
     if (AI.refs.busy) { el.innerHTML = '<p class="mute">Looking at your references…</p>'; return; }
@@ -548,7 +560,7 @@
   }
   var pendingImgs = [];
   function addFiles(list) {
-    if (!AI.on) return;
+    if (!AI.on || !AI.images) return;
     var files = [].slice.call(list || []).filter(function (f) { return /^(image|video)\//.test(f.type); }).slice(0, Math.max(0, 4 - AI.refs.files));
     if (!files.length) return;
     var th = $('thumbs');
@@ -580,5 +592,9 @@
   if (new URLSearchParams(location.search).has('reset')) { try { sessionStorage.removeItem(KEY); } catch (e) {} location.replace(location.pathname); return; }
   renderAll(); revealIn(document.querySelector('.intro'));
   aiPing();
+  if (R.fxRules && R.fxRules.live) fetchT('/api/fx', {}, 3000).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+    if (!j || !j.rates) return; ['USD', 'GBP'].forEach(function (k) { if (+j.rates[k] > 0) FX.live[k] = +j.rates[k]; }); FX.at = j.at || Date.now(); FX.source = j.source || '';
+    rerender(0); updateEst();
+  }).catch(function () {});
   window.DPRC = { compute: compute, tierInfo: tierInfo, state: S, report: function () { return report().text; } }; // handy for checking prices in the console
 })();

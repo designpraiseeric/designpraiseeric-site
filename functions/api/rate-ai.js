@@ -7,16 +7,23 @@
 // Images arrive as small JPEG data URLs, are passed to the model in memory and never written anywhere.
 // Every call logs an insight row (no names, emails or images) for /brand/rate-insights.
 //
-// Settings (Pages > Settings > Variables and secrets):
-//   ANTHROPIC_API_KEY   required to switch it on
+// Settings (Pages > Settings > Variables and secrets). Either key switches it on; with both, Claude is tried first and Gemini is the fallback.
+//   ANTHROPIC_API_KEY   Claude (preferred)
 //   RATE_AI_MODEL       optional, default claude-haiku-5-5
-//   RATE_AI             set to "off" to switch it off without removing the key
+//   GEMINI_API_KEY      Gemini, from Google AI Studio (one key)
+//   GEMINI_MODEL        optional, default gemini-3.6-flash
+//   GEMINI_PAID         set to "yes" once billing is on for that Google project. On Google's free tier, prompts and
+//                       images may be used by Google to improve its products, so client images are NOT sent to
+//                       Gemini unless this is "yes" (the image upload is hidden; questions and link reading still work).
+//   RATE_AI             set to "off" to switch it off without removing the keys
 import { json } from '../_lib/common.js';
 import { logInsight } from '../_lib/rates-db.js';
 
-const on = (env) => !!env.ANTHROPIC_API_KEY && env.RATE_AI !== 'off';
+const on = (env) => (!!env.ANTHROPIC_API_KEY || !!env.GEMINI_API_KEY) && env.RATE_AI !== 'off';
+// Client images may go to a provider only where they aren't used for training.
+const imagesOk = (env) => !!env.ANTHROPIC_API_KEY || String(env.GEMINI_PAID || '').toLowerCase() === 'yes';
 
-export async function onRequestGet({ env }) { return json({ ok: on(env) }); }
+export async function onRequestGet({ env }) { return json({ ok: on(env), images: on(env) && imagesOk(env) }); }
 
 const SYSTEM = `You help a Lagos-based art director and motion designer (Divinepraise Eric, DesignPraise Studio) understand prospective clients who are using his online rate card.
 The client never sees that you exist. Your words may be shown on the page as if written by him: plain, warm, professional English. No buzzwords, no exclamation marks, no emoji, never mention AI.
@@ -67,18 +74,61 @@ async function linkInfo(url) {
   } catch (e) { return null; }
 }
 
-async function ask(env, action, content) {
+async function askClaude(env, system, content) {
   const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 22000);
   try {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST', signal: ctl.signal,
       headers: { 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-      body: JSON.stringify({ model: env.RATE_AI_MODEL || 'claude-haiku-5-5', max_tokens: 900, system: SYSTEM + '\n\nTask: ' + TASKS[action], messages: [{ role: 'user', content }] }),
+      body: JSON.stringify({ model: env.RATE_AI_MODEL || 'claude-haiku-5-5', max_tokens: 900, system, messages: [{ role: 'user', content }] }),
     });
     if (!r.ok) return null;
     const j = await r.json();
     return pickJSON((j.content || []).map((c) => c.text || '').join(''));
   } catch (e) { return null; } finally { clearTimeout(t); }
+}
+
+async function urlToInline(url) {
+  // Gemini can't fetch arbitrary image URLs, so small link thumbnails are fetched here and passed inline.
+  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 4000);
+  try {
+    const r = await fetch(url, { signal: ctl.signal });
+    const type = (r.headers.get('content-type') || '').split(';')[0];
+    if (!r.ok || !/^image\/(jpeg|png|webp)$/.test(type)) return null;
+    const buf = new Uint8Array(await r.arrayBuffer());
+    if (buf.length > 1_500_000) return null;
+    let bin = ''; for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode.apply(null, buf.subarray(i, i + 0x8000));
+    return { inline_data: { mime_type: type, data: btoa(bin) } };
+  } catch (e) { return null; } finally { clearTimeout(t); }
+}
+async function askGemini(env, system, content) {
+  const parts = [];
+  for (const c of content) {
+    if (c.type === 'text') parts.push({ text: c.text });
+    else if (c.source && c.source.type === 'base64') { if (imagesOk(env)) parts.push({ inline_data: { mime_type: c.source.media_type, data: c.source.data } }); }
+    else if (c.source && c.source.type === 'url') { const p = await urlToInline(c.source.url); if (p) parts.push(p); }
+  }
+  const model = env.GEMINI_MODEL || 'gemini-3.6-flash';
+  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 22000);
+  try {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+      method: 'POST', signal: ctl.signal,
+      headers: { 'x-goog-api-key': env.GEMINI_API_KEY, 'content-type': 'application/json' },
+      body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: [{ role: 'user', parts }], generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 1200, temperature: 0.4 } }),
+    });
+    if (!r.ok) return null;
+    const j = await r.json();
+    const c = j.candidates && j.candidates[0];
+    return pickJSON(((c && c.content && c.content.parts) || []).map((p) => p.text || '').join(''));
+  } catch (e) { return null; } finally { clearTimeout(t); }
+}
+
+async function ask(env, action, content) {
+  const system = SYSTEM + '\n\nTask: ' + TASKS[action];
+  let out = null;
+  if (env.ANTHROPIC_API_KEY) out = await askClaude(env, system, content);
+  if (!out && env.GEMINI_API_KEY) out = await askGemini(env, system, content);
+  return out;
 }
 
 export async function onRequestPost({ request, env, waitUntil }) {
@@ -95,7 +145,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
 
   const content = [];
   if (action === 'refs') {
-    const imgs = (Array.isArray(b.images) ? b.images : []).slice(0, 8);
+    const imgs = imagesOk(env) ? (Array.isArray(b.images) ? b.images : []).slice(0, 8) : [];
     for (const d of imgs) {
       const m = /^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+/=]+)$/.exec(String(d));
       if (m && m[2].length < 1_100_000) content.push({ type: 'image', source: { type: 'base64', media_type: 'image/' + m[1], data: m[2] } });

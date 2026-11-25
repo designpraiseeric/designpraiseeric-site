@@ -27,21 +27,32 @@
      scale:{ref, exp}  production × (value / ref) ^ exp   (exp < 1: longer = cheaper per unit)
    ===================================================================== */
 window.RATES = {
-  version: '2026-11-25',
+  version: '2026-11-26',
   owner: { name: 'Divinepraise Eric', studio: 'DesignPraise Studio', email: 'divinepraiseeric@gmail.com', wa: '2348135726234' },
 
-  /* Range band around the computed figure. Anchor check: a standard motion video
-     at 90 s comes out near ₦80k at the low end, 180 s near ₦250k at the high end. */
-  band: { lo: 0.76, hi: 1.3, perUnsure: 0.04 },
+  /* Range band around the computed figure. ANCHOR: a standard-tier motion video, motion only,
+     all assets supplied, comes out at ₦120,000 at 90 s (low end) and ₦350,000 at 180 s (high end).
+     That's motion's base (215,000 at 135 s) with this band. Every other category was set relative to it. */
+  band: { lo: 0.79, hi: 1.275, perUnsure: 0.04 },
 
   /* One working day of studio time at standard tier (used for timeline estimates). */
-  dayRate: 25000,
+  dayRate: 36000,
 
-  /* ---------- currencies: FX = naira per unit (update when rates move) ---------- */
+  /* ---------- currencies ----------
+     fx = naira per unit: the REFERENCE rate, set when the market levels below were set.
+     The page also fetches a live rate from /api/fx (refreshed every 6 hours) and applies fxRules.
+     If the live rate can't be fetched, these reference rates are used. */
   currencies: {
     NGN: { symbol: '₦', fx: 1, round: 5000, name: 'Naira' },
     USD: { symbol: '$', fx: 1400, round: 10, name: 'US dollar' },   // NFEM ≈ ₦1,357, parallel ≈ ₦1,440 (Nov 2026)
     GBP: { symbol: '£', fx: 1800, round: 10, name: 'Pound sterling' } // ≈ ₦1,790–1,840 (Nov 2026)
+  },
+  fxRules: {
+    live: true,            // use the live rate at all (false = reference rates only)
+    maxMove: 0.3,          // ignore a live rate more than 30% away from the reference (bad data); reference is used instead
+    foreignFloor: true,    // clients outside Nigeria: a weaker naira never lowers their price (lower of live and reference is used)
+    nigeriaLive: true      // Nigerian clients viewing $ or £: plain live conversion of their naira price
+    // The server also ignores moves under 1.5% between refreshes, so figures don't jitter (functions/api/fx.js)
   },
 
   /* ---------- markets: price level vs Nigeria, by economic level not exchange rate ---------- */
@@ -143,9 +154,9 @@ window.RATES = {
       { id: 'vert', label: 'Vertical 9:16', p: 0.12, line: 'Vertical version' },
       { id: 'sq', label: 'Square 1:1 or 4:5', p: 0.1, line: 'Square version' },
       { id: 'cut', label: 'Cutdowns (6 s, 15 s, 30 s)', p: 0.15, line: 'Cutdowns' },
-      { id: 'subs', label: 'Captions or subtitles', a: 15000, perMin: true, line: 'Captions' },
+      { id: 'subs', label: 'Captions or subtitles', a: 20000, perMin: true, line: 'Captions' },
       { id: 'lang', label: 'Another language version', p: 0.15, line: 'Language version' },
-      { id: 'alpha', label: 'ProRes or transparent files', a: 10000, line: 'Mastering files' },
+      { id: 'alpha', label: 'ProRes or transparent files', a: 15000, line: 'Mastering files' },
       { id: 'proj', label: 'Editable project files', p: 0.15, line: 'Project files' }
     ] }
   },
@@ -188,7 +199,7 @@ window.RATES = {
   categories: [
     {
       id: 'motion', label: 'Motion design', blurb: 'Explainers, product films, social motion, titles and logo animation', colour: '#03eed8', tiles: [4],
-      base: 150000, min: 45000, rights: true, logistics: ['turnaround', 'revisions', 'brand', 'formats', 'channels', 'territory', 'term', 'portfolio'],
+      base: 215000, min: 65000, rights: true, logistics: ['turnaround', 'revisions', 'brand', 'formats', 'channels', 'territory', 'term', 'portfolio'],
       questions: [
         { id: 'variant', type: 'single', label: 'What kind of piece?', options: [
           { id: 'explainer', label: 'Explainer', def: true }, { id: 'product', label: 'Product or app film', m: 1.1 },
@@ -221,14 +232,14 @@ window.RATES = {
           { id: 'vo', label: 'Voiceover', need: { pass: 30000, perMin: true, line: 'Voice talent' } },
           { id: 'music', label: 'Music', need: { pass: 25000, line: 'Licensed music' } },
           { id: 'sfx', label: 'Sound design', need: { p: 0.1, line: 'Sound design' } },
-          { id: 'logo', label: 'Logo and brand files', need: { a: 15000, line: 'Logo clean-up' } },
+          { id: 'logo', label: 'Logo and brand files', need: { a: 21000, line: 'Logo clean-up' } },
           { id: 'footage', label: 'Footage or screenshots', need: { pass: 30000, line: 'Stock footage' } }
         ] }
       ]
     },
     {
       id: 'anim2d', label: '2D animation', blurb: 'Character animation, stories, series and kids content', colour: '#038eee', tiles: [3, 4, 5],
-      base: 350000, min: 120000, rights: true, logistics: ['turnaround', 'revisions', 'brand', 'formats', 'channels', 'territory', 'term', 'portfolio'],
+      base: 500000, min: 170000, rights: true, logistics: ['turnaround', 'revisions', 'brand', 'formats', 'channels', 'territory', 'term', 'portfolio'],
       questions: [
         { id: 'variant', type: 'single', label: 'What kind of piece?', options: [
           { id: 'explainer', label: 'Character explainer', def: true }, { id: 'story', label: 'Short story or film', m: 1.15 },
@@ -264,7 +275,7 @@ window.RATES = {
     },
     {
       id: 'anim3d', label: '3D animation', blurb: 'Product visualisation, launch films and 3D scenes', colour: '#a57bff', tiles: [0, 4, 8],
-      base: 400000, min: 120000, rights: true, logistics: ['turnaround', 'revisions', 'brand', 'formats', 'channels', 'territory', 'term', 'portfolio'],
+      base: 570000, min: 170000, rights: true, logistics: ['turnaround', 'revisions', 'brand', 'formats', 'channels', 'territory', 'term', 'portfolio'],
       questions: [
         { id: 'variant', type: 'single', label: 'What kind of piece?', options: [
           { id: 'turn', label: 'Product turntable or hero shots', m: 0.75 }, { id: 'launch', label: 'Product launch film', def: true },
@@ -290,7 +301,7 @@ window.RATES = {
         ] },
         { id: 'assets', type: 'assets', label: 'What do you already have?', items: [
           { id: 'board', label: 'Storyboard or shot list', need: { p: 0.1, line: 'Storyboard' } },
-          { id: 'mats', label: 'Material and colour references', need: { a: 20000, line: 'Look development' } },
+          { id: 'mats', label: 'Material and colour references', need: { a: 30000, line: 'Look development' } },
           { id: 'music', label: 'Music', need: { pass: 25000, line: 'Licensed music' } },
           { id: 'sfx', label: 'Sound design', need: { p: 0.08, line: 'Sound design' } }
         ] }
@@ -298,13 +309,13 @@ window.RATES = {
     },
     {
       id: 'film', label: 'Film and video production', blurb: 'Directing and shooting commercials, short films, documentaries, events and church media', colour: '#d903ee', tiles: [0, 4, 8],
-      base: 0, min: 120000, rights: true, logistics: ['turnaround', 'revisions', 'brand', 'formats', 'channels', 'territory', 'term', 'portfolio'],
+      base: 0, min: 170000, rights: true, logistics: ['turnaround', 'revisions', 'brand', 'formats', 'channels', 'territory', 'term', 'portfolio'],
       questions: [
         { id: 'variant', type: 'single', label: 'What are we making?', options: [
-          { id: 'brand', label: 'Brand or corporate film', b: 350000, def: true }, { id: 'ad', label: 'Commercial', b: 420000 },
-          { id: 'mv', label: 'Music video', b: 350000 }, { id: 'doc', label: 'Documentary short', b: 450000 },
-          { id: 'short', label: 'Short film (narrative)', b: 600000 }, { id: 'testi', label: 'Interviews or testimonials', b: 200000 },
-          { id: 'event', label: 'Event coverage or highlight', b: 180000 }, { id: 'church', label: 'Church or worship media', b: 150000 }
+          { id: 'brand', label: 'Brand or corporate film', b: 500000, def: true }, { id: 'ad', label: 'Commercial', b: 600000 },
+          { id: 'mv', label: 'Music video', b: 500000 }, { id: 'doc', label: 'Documentary short', b: 645000 },
+          { id: 'short', label: 'Short film (narrative)', b: 860000 }, { id: 'testi', label: 'Interviews or testimonials', b: 285000 },
+          { id: 'event', label: 'Event coverage or highlight', b: 255000 }, { id: 'church', label: 'Church or worship media', b: 215000 }
         ] },
         { id: 'blend', type: 'multi', label: 'Mixed with anything else?', options: [
           { id: 'motion', label: 'Motion graphics', m: 1.2 }, { id: 'anim', label: 'Animated sequences', m: 1.3 }, { id: 'vfx', label: 'VFX shots', m: 1.25 },
@@ -322,7 +333,7 @@ window.RATES = {
         ] },
         { id: 'cast', type: 'single', label: 'On-screen talent', options: [
           { id: 'none', label: 'Real people or your team', def: true }, { id: 'few', label: '1–3 actors', pass: 120000, perDay: true, line: 'Actors' },
-          { id: 'many', label: '4–10 actors', pass: 350000, perDay: true, line: 'Cast' }, { id: 'call', label: 'Casting call needed', a: 80000, pass: 150000, perDay: true, line: 'Casting and cast' }
+          { id: 'many', label: '4–10 actors', pass: 350000, perDay: true, line: 'Cast' }, { id: 'call', label: 'Casting call needed', a: 115000, pass: 150000, perDay: true, line: 'Casting and cast' }
         ] },
         { id: 'loc', type: 'single', label: 'Locations', options: [
           { id: 'l1', label: 'One location', def: true }, { id: 'l2', label: '2–3 locations', m: 1.15 }, { id: 'l4', label: '4 or more', m: 1.3 },
@@ -347,7 +358,7 @@ window.RATES = {
     },
     {
       id: 'edit', label: 'Editing and post', blurb: 'Edits from your footage: social, YouTube, promos, events and sermons', colour: '#ffa800', tiles: [0, 2, 6, 8],
-      base: 45000, min: 25000, rights: false, logistics: ['turnaround', 'revisions', 'brand', 'formats', 'portfolio'],
+      base: 65000, min: 35000, rights: false, logistics: ['turnaround', 'revisions', 'brand', 'formats', 'portfolio'],
       questions: [
         { id: 'variant', type: 'single', label: 'What kind of edit?', options: [
           { id: 'social', label: 'Social reel or short', m: 1 }, { id: 'yt', label: 'YouTube or long-form', def: true },
@@ -360,23 +371,23 @@ window.RATES = {
         { id: 'extras', type: 'multi', label: 'Also needed', options: [
           { id: 'story', label: 'Find the story (no script)', m: 1.2 }, { id: 'multicam', label: 'Multicam sync', m: 1.15 },
           { id: 'grade', label: 'Colour grade', p: 0.2, line: 'Colour grade' }, { id: 'audio', label: 'Audio clean-up and mix', p: 0.15, line: 'Audio mix' },
-          { id: 'titles', label: 'Motion titles and lower thirds', p: 0.15, line: 'Motion titles' }, { id: 'thumb', label: 'Thumbnail', a: 15000, line: 'Thumbnail' }
+          { id: 'titles', label: 'Motion titles and lower thirds', p: 0.15, line: 'Motion titles' }, { id: 'thumb', label: 'Thumbnail', a: 21000, line: 'Thumbnail' }
         ] },
         { id: 'assets', type: 'assets', label: 'What do you already have?', items: [
           { id: 'music', label: 'Music', need: { pass: 20000, line: 'Licensed music' } },
           { id: 'broll', label: 'B-roll', need: { pass: 30000, line: 'Stock B-roll' } },
-          { id: 'gfx', label: 'Brand graphics pack', need: { a: 30000, line: 'Graphics pack' } }
+          { id: 'gfx', label: 'Brand graphics pack', need: { a: 45000, line: 'Graphics pack' } }
         ] }
       ]
     },
     {
       id: 'vfx', label: 'Colour and VFX', blurb: 'Grading, compositing, tracking, clean-up and screen replacement', colour: '#eed903', tiles: [0, 2, 4, 6, 8],
-      base: 0, min: 30000, rights: false, logistics: ['turnaround', 'revisions', 'formats', 'portfolio'],
+      base: 0, min: 45000, rights: false, logistics: ['turnaround', 'revisions', 'formats', 'portfolio'],
       questions: [
         { id: 'variant', type: 'single', label: 'Main job', hint: 'Price is per shot.', options: [
-          { id: 'grade', label: 'Colour grade', b: 8000, def: true }, { id: 'comp', label: 'Green screen or compositing', b: 30000 },
-          { id: 'track', label: 'Tracking and screen replacement', b: 22000 }, { id: 'clean', label: 'Clean-up or object removal', b: 25000 },
-          { id: 'ext', label: 'Sky or set extension', b: 40000 }, { id: 'beauty', label: 'Beauty or retouch', b: 20000 }, { id: 'cg', label: 'CG integration', b: 60000 }
+          { id: 'grade', label: 'Colour grade', b: 11000, def: true }, { id: 'comp', label: 'Green screen or compositing', b: 45000 },
+          { id: 'track', label: 'Tracking and screen replacement', b: 30000 }, { id: 'clean', label: 'Clean-up or object removal', b: 35000 },
+          { id: 'ext', label: 'Sky or set extension', b: 55000 }, { id: 'beauty', label: 'Beauty or retouch', b: 30000 }, { id: 'cg', label: 'CG integration', b: 85000 }
         ] },
         { id: 'blend', type: 'multi', label: 'Also in the same shots', options: [
           { id: 'grade', label: 'Grade', m: 1.15 }, { id: 'comp', label: 'Compositing', m: 1.3 }, { id: 'track', label: 'Tracking', m: 1.2 }, { id: 'clean', label: 'Clean-up', m: 1.2 }
@@ -389,27 +400,27 @@ window.RATES = {
           { id: 'good', label: 'Well shot (log, clean)', def: true }, { id: 'ok', label: 'Average', m: 1.2 }, { id: 'poor', label: 'Difficult (noise, motion blur, phone)', m: 1.5 }
         ] },
         { id: 'look', type: 'multi', label: 'Look development', options: [
-          { id: 'lut', label: 'Custom LUT or show look', a: 60000, line: 'Look development' }, { id: 'hdr', label: 'HDR deliverable', p: 0.2, line: 'HDR master' }
+          { id: 'lut', label: 'Custom LUT or show look', a: 85000, line: 'Look development' }, { id: 'hdr', label: 'HDR deliverable', p: 0.2, line: 'HDR master' }
         ] }
       ]
     },
     {
       id: 'identity', label: 'Brand identity', blurb: 'Logos, identity systems, guidelines and rebrands', colour: '#6403ee', tiles: [1, 4],
-      base: 0, min: 120000, rights: false, logistics: ['turnaround', 'revisions', 'portfolio'],
+      base: 0, min: 170000, rights: false, logistics: ['turnaround', 'revisions', 'portfolio'],
       questions: [
         { id: 'variant', type: 'single', label: 'Scope', options: [
-          { id: 'logo', label: 'Logo only', b: 180000 }, { id: 'basic', label: 'Logo and basic identity', b: 350000, def: true },
-          { id: 'system', label: 'Full identity system', b: 650000 }, { id: 'rebrand', label: 'Rebrand of an existing identity', b: 480000 },
-          { id: 'motion', label: 'Identity with motion identity', b: 950000 }
+          { id: 'logo', label: 'Logo only', b: 255000 }, { id: 'basic', label: 'Logo and basic identity', b: 500000, def: true },
+          { id: 'system', label: 'Full identity system', b: 930000 }, { id: 'rebrand', label: 'Rebrand of an existing identity', b: 685000 },
+          { id: 'motion', label: 'Identity with motion identity', b: 1360000 }
         ] },
         { id: 'blend', type: 'multi', label: 'Add motion?', options: [
-          { id: 'logoanim', label: 'Logo animation', a: 90000, line: 'Logo animation' }, { id: 'kit', label: 'Social motion templates', a: 120000, line: 'Motion templates' }
+          { id: 'logoanim', label: 'Logo animation', a: 130000, line: 'Logo animation' }, { id: 'kit', label: 'Social motion templates', a: 170000, line: 'Motion templates' }
         ] },
         { id: 'concepts', type: 'single', label: 'Initial concepts', options: [
           { id: 'c2', label: '2 directions', def: true }, { id: 'c3', label: '3 directions', m: 1.15 }, { id: 'c5', label: '5 directions', m: 1.35 }
         ] },
         { id: 'research', type: 'single', label: 'Strategy', options: [
-          { id: 'none', label: 'You have a clear brief', def: true }, { id: 'light', label: 'A short workshop', a: 60000, line: 'Brand workshop' },
+          { id: 'none', label: 'You have a clear brief', def: true }, { id: 'light', label: 'A short workshop', a: 85000, line: 'Brand workshop' },
           { id: 'full', label: 'Full strategy (audience, positioning)', p: 0.3, line: 'Brand strategy' }
         ] },
         { id: 'guide', type: 'single', label: 'Guidelines', options: [
@@ -417,13 +428,13 @@ window.RATES = {
           { id: 'full', label: 'Comprehensive brand book', p: 0.35, line: 'Brand book' }
         ] },
         { id: 'apps', type: 'multi', label: 'Applications', options: [
-          { id: 'stat', label: 'Business cards and stationery', a: 40000, line: 'Stationery' }, { id: 'social', label: 'Social templates', a: 60000, line: 'Social templates' },
-          { id: 'deck', label: 'Presentation template', a: 90000, line: 'Presentation template' }, { id: 'sign', label: 'Signage and merch', a: 50000, line: 'Signage and merch' },
-          { id: 'pack', label: 'Packaging', a: 120000, line: 'Packaging' }, { id: 'web', label: 'Website style', a: 120000, line: 'Website style' },
-          { id: 'name', label: 'Naming', a: 150000, line: 'Naming' }
+          { id: 'stat', label: 'Business cards and stationery', a: 55000, line: 'Stationery' }, { id: 'social', label: 'Social templates', a: 85000, line: 'Social templates' },
+          { id: 'deck', label: 'Presentation template', a: 130000, line: 'Presentation template' }, { id: 'sign', label: 'Signage and merch', a: 70000, line: 'Signage and merch' },
+          { id: 'pack', label: 'Packaging', a: 170000, line: 'Packaging' }, { id: 'web', label: 'Website style', a: 170000, line: 'Website style' },
+          { id: 'name', label: 'Naming', a: 215000, line: 'Naming' }
         ] },
         { id: 'assets', type: 'assets', label: 'What do you already have?', items: [
-          { id: 'brief', label: 'Written brief', need: { a: 20000, line: 'Brief writing' } },
+          { id: 'brief', label: 'Written brief', need: { a: 30000, line: 'Brief writing' } },
           { id: 'name', label: 'Final name', need: { u: 1 } },
           { id: 'fonts', label: 'Font licences', need: { pass: 60000, line: 'Font licences' } },
           { id: 'photo', label: 'Photography', need: { pass: 80000, line: 'Stock or commissioned photos' } }
@@ -432,12 +443,12 @@ window.RATES = {
     },
     {
       id: 'motionsys', label: 'Motion identity and templates', blurb: 'Motion systems, channel kits, Essential Graphics and automated templates', colour: '#03ee63', tiles: [0, 1, 2, 3, 4, 5, 6, 7, 8],
-      base: 0, min: 60000, rights: false, logistics: ['turnaround', 'revisions', 'brand', 'portfolio'],
+      base: 0, min: 85000, rights: false, logistics: ['turnaround', 'revisions', 'brand', 'portfolio'],
       questions: [
         { id: 'variant', type: 'single', label: 'Scope', options: [
-          { id: 'logo', label: 'Logo animation only', b: 90000 }, { id: 'yt', label: 'Channel kit (intro, end screen, lower thirds)', b: 280000, def: true },
-          { id: 'toolkit', label: 'Motion toolkit (titles, transitions, lower thirds)', b: 320000 }, { id: 'event', label: 'Event or broadcast package', b: 450000 },
-          { id: 'system', label: 'Full motion identity with guidelines', b: 650000 }
+          { id: 'logo', label: 'Logo animation only', b: 130000 }, { id: 'yt', label: 'Channel kit (intro, end screen, lower thirds)', b: 400000, def: true },
+          { id: 'toolkit', label: 'Motion toolkit (titles, transitions, lower thirds)', b: 460000 }, { id: 'event', label: 'Event or broadcast package', b: 645000 },
+          { id: 'system', label: 'Full motion identity with guidelines', b: 930000 }
         ] },
         { id: 'elements', type: 'range', label: 'Template elements', unit: '', min: 1, max: 40, step: 1, def: 8, scale: { ref: 8, exp: 0.6 } },
         { id: 'format', type: 'multi', label: 'Template formats', hint: 'After Effects project is included.', options: [
@@ -448,14 +459,14 @@ window.RATES = {
           { id: 'simple', label: 'Simple', m: 0.8 }, { id: 'mod', label: 'Moderate', def: true }, { id: 'detail', label: 'Detailed', m: 1.3 }
         ] },
         { id: 'extras', type: 'multi', label: 'Also needed', options: [
-          { id: 'train', label: 'Training session for your team', a: 40000, line: 'Team training' }, { id: 'guide', label: 'Motion guidelines', p: 0.15, line: 'Motion guidelines' },
-          { id: 'sound', label: 'Sonic logo or sound set', a: 60000, line: 'Sound set' }
+          { id: 'train', label: 'Training session for your team', a: 55000, line: 'Team training' }, { id: 'guide', label: 'Motion guidelines', p: 0.15, line: 'Motion guidelines' },
+          { id: 'sound', label: 'Sonic logo or sound set', a: 85000, line: 'Sound set' }
         ] }
       ]
     },
     {
       id: 'artdir', label: 'Art direction', blurb: 'Creative direction, style frames, treatments and production design', colour: '#d903ee', tiles: [1, 3, 5, 7],
-      base: 95000, min: 60000, rights: false, logistics: ['turnaround', 'revisions', 'brand', 'portfolio'],
+      base: 135000, min: 85000, rights: false, logistics: ['turnaround', 'revisions', 'brand', 'portfolio'],
       questions: [
         { id: 'variant', type: 'single', label: 'What do you need?', options: [
           { id: 'frames', label: 'Style frames and look development', def: true }, { id: 'campaign', label: 'Campaign art direction', m: 1.2 },
@@ -466,23 +477,23 @@ window.RATES = {
         ] },
         { id: 'days', type: 'range', label: 'Working days (rough)', unit: 'd', min: 1, max: 30, step: 1, def: 4, scale: { ref: 1, exp: 0.95 } },
         { id: 'deliver', type: 'multi', label: 'Deliverables', options: [
-          { id: 'board', label: 'Mood boards', m: 1 }, { id: 'frames', label: 'Finished style frames', m: 1.1 }, { id: 'deck', label: 'Presentation deck', a: 40000, line: 'Deck design' },
+          { id: 'board', label: 'Mood boards', m: 1 }, { id: 'frames', label: 'Finished style frames', m: 1.1 }, { id: 'deck', label: 'Presentation deck', a: 55000, line: 'Deck design' },
           { id: 'onset', label: 'On-set supervision', m: 1.15 }
         ] },
         { id: 'assets', type: 'assets', label: 'What do you already have?', items: [
-          { id: 'brief', label: 'Brief', need: { a: 20000, line: 'Brief writing' } },
+          { id: 'brief', label: 'Brief', need: { a: 30000, line: 'Brief writing' } },
           { id: 'refs', label: 'References', need: { u: 0 } }
         ] }
       ]
     },
     {
       id: 'tools', label: 'Custom tools and training', blurb: 'After Effects and Premiere scripts, panels, pipelines and workshops', colour: '#03ee63', tiles: [0, 1, 2, 3, 4, 5, 6, 7, 8],
-      base: 0, min: 60000, rights: false, logistics: ['turnaround', 'revisions', 'portfolio'],
+      base: 0, min: 85000, rights: false, logistics: ['turnaround', 'revisions', 'portfolio'],
       questions: [
         { id: 'variant', type: 'single', label: 'What do you need?', options: [
-          { id: 'script', label: 'After Effects script', b: 150000, def: true }, { id: 'panel', label: 'After Effects panel (with interface)', b: 450000 },
-          { id: 'pipe', label: 'Template automation pipeline', b: 600000 }, { id: 'plugin', label: 'Premiere or Resolve plugin', b: 500000 },
-          { id: 'workshop', label: 'Workshop (one session)', b: 120000 }, { id: 'course', label: 'Course (several sessions)', b: 450000 }
+          { id: 'script', label: 'After Effects script', b: 215000, def: true }, { id: 'panel', label: 'After Effects panel (with interface)', b: 645000 },
+          { id: 'pipe', label: 'Template automation pipeline', b: 860000 }, { id: 'plugin', label: 'Premiere or Resolve plugin', b: 715000 },
+          { id: 'workshop', label: 'Workshop (one session)', b: 170000 }, { id: 'course', label: 'Course (several sessions)', b: 645000 }
         ] },
         { id: 'complexity', type: 'single', label: 'Complexity', options: [
           { id: 'simple', label: 'Simple', m: 0.7 }, { id: 'mod', label: 'Moderate', def: true }, { id: 'adv', label: 'Advanced', m: 1.6 }, { id: 'ns', label: 'Not sure', u: 1 }
@@ -492,7 +503,7 @@ window.RATES = {
         ] },
         { id: 'people', type: 'range', label: 'People using it or attending', unit: '', min: 1, max: 200, step: 1, def: 5, scale: { ref: 5, exp: 0.12 } },
         { id: 'extras', type: 'multi', label: 'Also needed', options: [
-          { id: 'docs', label: 'Documentation and video guide', a: 40000, line: 'Docs and guide' }, { id: 'support', label: '3 months of support', p: 0.15, line: 'Support' },
+          { id: 'docs', label: 'Documentation and video guide', a: 55000, line: 'Docs and guide' }, { id: 'support', label: '3 months of support', p: 0.15, line: 'Support' },
           { id: 'onsite', label: 'In person (Lagos)', pass: 40000, line: 'Travel' }
         ] }
       ]
