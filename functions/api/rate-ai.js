@@ -23,7 +23,12 @@ const on = (env) => (!!env.ANTHROPIC_API_KEY || !!env.GEMINI_API_KEY) && env.RAT
 // Client images may go to a provider only where they aren't used for training.
 const imagesOk = (env) => !!env.ANTHROPIC_API_KEY || String(env.GEMINI_PAID || '').toLowerCase() === 'yes';
 
-export async function onRequestGet({ env }) { return json({ ok: on(env), images: on(env) && imagesOk(env) }); }
+// Google allows only its paid tier for apps used in the EEA, Switzerland and the UK, so free-tier Gemini is skipped for visitors there.
+const PAID_ONLY = new Set('AT BE BG HR CY CZ DK EE FI FR DE GR HU IE IT LV LT LU MT NL PL PT RO SK SI ES SE IS LI NO CH GB'.split(' '));
+const geminiOk = (env, request) => !!env.GEMINI_API_KEY && (String(env.GEMINI_PAID || '').toLowerCase() === 'yes' || !PAID_ONLY.has(((request.cf && request.cf.country) || request.headers.get('CF-IPCountry') || '').toUpperCase()));
+const usable = (env, request) => env.RATE_AI !== 'off' && (!!env.ANTHROPIC_API_KEY || geminiOk(env, request));
+
+export async function onRequestGet({ env, request }) { const ok = usable(env, request); return json({ ok, images: ok && imagesOk(env) }); }
 
 const SYSTEM = `You help a Lagos-based art director and motion designer (Divinepraise Eric, DesignPraise Studio) understand prospective clients who are using his online rate card.
 The client never sees that you exist. Your words may be shown on the page as if written by him: plain, warm, professional English. No buzzwords, no exclamation marks, no emoji, never mention AI.
@@ -123,16 +128,16 @@ async function askGemini(env, system, content) {
   } catch (e) { return null; } finally { clearTimeout(t); }
 }
 
-async function ask(env, action, content) {
+async function ask(env, action, content, request) {
   const system = SYSTEM + '\n\nTask: ' + TASKS[action];
   let out = null;
   if (env.ANTHROPIC_API_KEY) out = await askClaude(env, system, content);
-  if (!out && env.GEMINI_API_KEY) out = await askGemini(env, system, content);
+  if (!out && geminiOk(env, request)) out = await askGemini(env, system, content);
   return out;
 }
 
 export async function onRequestPost({ request, env, waitUntil }) {
-  if (!on(env)) return json({ ok: false }, 503);
+  if (!usable(env, request)) return json({ ok: false }, 503);
   let raw;
   try { raw = await request.text(); } catch (e) { return json({ ok: false }, 400); }
   if (raw.length > 6_000_000) return json({ ok: false }, 413);
@@ -158,10 +163,10 @@ export async function onRequestPost({ request, env, waitUntil }) {
   }
   content.push({ type: 'text', text: 'Calculator context: ' + JSON.stringify({ ...ctx, schema }).slice(0, 20000) + (b.outcome ? '\nOutcome: ' + String(b.outcome).slice(0, 40) : '') });
 
-  let out = await ask(env, action, content);
+  let out = await ask(env, action, content, request);
   if (!out && action === 'refs' && content.some((c) => c.source && c.source.type === 'url')) {
     // A remote thumbnail can fail to load; try once more without them.
-    out = await ask(env, action, content.filter((c) => !(c.source && c.source.type === 'url')));
+    out = await ask(env, action, content.filter((c) => !(c.source && c.source.type === 'url')), request);
   }
   if (!out) return json({ ok: false }, 502);
 
