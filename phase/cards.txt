@@ -1,0 +1,27 @@
+# Phase cards: your own.
+#
+# Phase reads this file a few times a day whenever the phone is online, and shows
+# new cards first, then mixes them in with the rest. Edit it on GitHub (web or app):
+# designpraiseeric-site › phase › cards.txt › pencil › Commit. The site updates in
+# about a minute; phones pick it up within a few hours.
+#
+# FORMAT
+# One card per block. Put a line with three dashes (---) between cards.
+#   text:    the card itself. It can run over several lines, until the next field.
+#   kind:    Thought, Gospel, Doctrine, Scripture or History (Thought if you leave it out)
+#   cite:    who or where it's from (optional)
+#   verses:  references, separated by semicolons, e.g. Rom 8:28; Col 3:23-24; 1 Cor 13:4
+#            (each becomes a link that opens in Bible Strong, in your translation)
+#   link:    Label | https://address   (optional; add as many link: lines as you like)
+#   from:    2026-12-01   (optional: don't show before this date, for seasons like Advent)
+#   until:   2026-12-31   (optional: stop showing after this date)
+# Lines that start with # are notes like these and are never shown.
+#
+# EXAMPLE (remove the # signs to use it)
+# kind: Thought
+# text: Every frame has one job. So does every day: find it, then put down
+#       everything else.
+# cite: Eric, 25 Nov 2026
+# verses: Col 3:23; Eccl 9:10
+# ---
+
