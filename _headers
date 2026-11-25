@@ -11,3 +11,9 @@
 
 /phase/cards.txt
   Content-Type: text/plain; charset=utf-8
+
+/rate-card/*
+  X-Robots-Tag: noindex
+
+/book/*
+  X-Robots-Tag: noindex
