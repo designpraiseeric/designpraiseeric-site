@@ -25,13 +25,15 @@
      when:{q,any} the effect only counts when another question has one of these answers
      needScale    multiplies every "Need it" asset line (used by the AI options)
      cats:[…]     the option only appears for these categories
-   QUESTION FIELDS: show:{q,in} hides a question unless another has one of these answers; hideIf:{q,in} hides it when it does
+     perChar      scale a/pass by the number of characters
+     aiScale      the AI options' needScale applies to this line too (e.g. generated voices)
+   QUESTION FIELDS: show:{q,in,cats?} hides a question unless another has one of these answers; hideIf:{q,in} hides it when it does
      (film's shoot questions disappear for AI-led work); notes:{optionId:'text'} explains a choice
    RANGE QUESTIONS
      scale:{ref, exp}  production × (value / ref) ^ exp   (exp < 1: longer = cheaper per unit)
    ===================================================================== */
 window.RATES = {
-  version: '2026-11-26b',
+  version: '2026-11-26c',
   owner: { name: 'Divinepraise Eric', studio: 'DesignPraise Studio', email: 'divinepraiseeric@gmail.com', wa: '2348135726234' },
 
   /* Range band around the computed figure. ANCHOR: a standard-tier motion video, motion only,
@@ -84,7 +86,10 @@ window.RATES = {
 
   /* ---------- step 1: about you ---------- */
   about: [
-    { id: 'org', type: 'single', label: 'What best describes you?', options: [
+    { id: 'for', type: 'single', label: 'Who is this for?', hint: 'If you’re arranging it for another organisation, answer the questions below about them, the one paying.', options: [
+      { id: 'self', label: 'My own organisation or project', pts: 0 }, { id: 'other', label: 'I’m arranging it for another organisation', pts: 0 }
+    ] },
+    { id: 'org', type: 'single', label: 'What best describes the organisation paying?', options: [
       { id: 'personal', label: 'Individual or personal project', pts: 0, np: true },
       { id: 'student', label: 'Student or school project', pts: 0, np: true },
       { id: 'ngo', label: 'Nonprofit, NGO or charity', pts: -1, np: true },
@@ -158,7 +163,8 @@ window.RATES = {
       { id: 'vert', label: 'Vertical 9:16', p: 0.12, line: 'Vertical version' },
       { id: 'sq', label: 'Square 1:1 or 4:5', p: 0.1, line: 'Square version' },
       { id: 'cut', label: 'Cutdowns (6 s, 15 s, 30 s)', p: 0.15, line: 'Cutdowns' },
-      { id: 'subs', label: 'Captions or subtitles', a: 20000, perMin: true, line: 'Captions' },
+      { id: 'subs', label: 'Plain captions or subtitles', a: 20000, perMin: true, line: 'Captions' },
+      { id: 'kcap', label: 'Styled animated captions (word by word)', p: 0.12, a: 10000, line: 'Animated captions' },
       { id: 'lang', label: 'Another language version', p: 0.15, line: 'Language version' },
       { id: 'alpha', label: 'ProRes or transparent files', a: 15000, line: 'Mastering files' },
       { id: 'proj', label: 'Editable project files', p: 0.15, line: 'Project files' }
@@ -181,6 +187,18 @@ window.RATES = {
       { id: 'no', label: 'No requirement', def: true }, { id: 'client', label: 'We’ll disclose it ourselves' },
       { id: 'label', label: 'Add a “made with AI” label to the work' }, { id: 'ns', label: 'Not sure', u: 1 }
     ] },
+    reference: { id: 'reference', type: 'single', label: 'Is it based on someone else’s work?', options: [
+      { id: 'own', label: 'No, our own direction', def: true },
+      { id: 'inspired', label: 'Inspired by a reference' },
+      { id: 'close', label: 'Close to a specific ad or film' }
+    ], notes: {
+      inspired: 'Good. Share it in the references step and I’ll use it for tone, pace and quality.',
+      close: 'I’ll match the quality and energy, but the characters, look and story will be your own. A close copy of another brand’s work, especially a competitor’s, can cause legal trouble and makes you look like them.'
+    } },
+    charRights: { id: 'charRights', type: 'single', label: 'How will the characters be used?', show: { q: 'blend', in: ['char'], cats: ['motion'] }, options: [
+      { id: 'project', label: 'In this project or series only', def: true },
+      { id: 'mascot', label: 'As brand mascots, anywhere', p: 0.2, line: 'Character rights (mascot use)' }
+    ], notes: { mascot: 'You can use the characters in any marketing. If they’re AI-generated, they may not be protected by copyright, so others could copy them; hand-designed characters are safer as mascots.' } },
     signoff: { id: 'signoff', type: 'single', label: 'Who signs off the work?', hint: 'More approvers usually means more rounds of feedback to combine.', options: [
       { id: 'one', label: 'Just me', def: true }, { id: 'few', label: '2–3 people', m: 1.1 },
       { id: 'many', label: 'A committee or several departments', m: 1.25, u: 1 }
@@ -194,6 +212,11 @@ window.RATES = {
   /* ---------- step 5: plan, volume and payment ---------- */
   volume: { id: 'count', label: 'How many pieces like this?', hint: 'Same style and brief. Each extra piece costs less because the look is already set.', min: 1, max: 20,
     steps: [{ from: 2, off: 0.05 }, { from: 3, off: 0.1 }, { from: 5, off: 0.15 }, { from: 10, off: 0.2 }] },
+  series: { id: 'series', label: 'Is it a series?', hint: 'A series with recurring characters or a fixed look needs a one-off setup: characters designed and locked, voices cast, captions, product segment and end card built as templates. After that, each episode costs less.', options: [
+    { id: 'no', label: 'No, one piece or unrelated pieces', def: true },
+    { id: 'yes', label: 'Yes, a series with a recurring look or cast' }
+  ] },
+  seriesSetup: { share: 0.5, perChar: 25000, line: 'Series setup (one-off)' }, // half of one piece's production, plus each recurring character
   retainer: { id: 'retainer', label: 'Ongoing work?', options: [
     { id: 'no', label: 'One-off project', def: true, off: 0 },
     { id: 'm3', label: 'Monthly retainer, 3 months', off: 0.1, months: 3 },
@@ -223,6 +246,8 @@ window.RATES = {
     ['Cancellation and pauses', 'Projects paused for more than 30 days by the client may be rescheduled into the next free slot. Rush and emergency slots are non-refundable once booked.'],
     ['Rights', 'Usage rights transfer when the final invoice is paid. Third-party items (music, stock, fonts, voice talent) follow their own licences.'],
     ['Late payment', 'Invoices are due within 7 days. Final files are released once the balance is paid.'],
+    ['Series and retainers', 'Scripts, assets and feedback are due on agreed dates, normally 5 working days before each delivery for weekly work. Late material moves that episode to the next free slot. Unused slots carry over for one month only. The one-off setup is paid with the first month.'],
+    ['Payment methods', 'Bank transfer only: naira for clients in Nigeria, US dollars or pounds for clients abroad. Crypto isn’t accepted.'],
     ['AI-generated material', 'Where you choose AI-generated elements, those parts may not be protected by copyright and the generation tools’ own terms apply, so exclusivity can’t be guaranteed for them. Handmade-only projects use no generative tools anywhere.']
   ],
 
@@ -230,19 +255,29 @@ window.RATES = {
   categories: [
     {
       id: 'motion', label: 'Motion design', blurb: 'Explainers, product films, social motion, titles and logo animation', colour: '#03eed8', tiles: [4],
-      base: 215000, min: 65000, rights: true, production: ['ai', 'disclose', 'signoff', 'look'], logistics: ['turnaround', 'revisions', 'brand', 'formats', 'channels', 'territory', 'term', 'portfolio'],
+      base: 215000, min: 65000, rights: true, production: ['ai', 'disclose', 'reference', 'charRights', 'signoff', 'look'], logistics: ['turnaround', 'revisions', 'brand', 'formats', 'channels', 'territory', 'term', 'portfolio'],
       questions: [
         { id: 'variant', type: 'single', label: 'What kind of piece?', options: [
           { id: 'explainer', label: 'Explainer', def: true }, { id: 'product', label: 'Product or app film', m: 1.1 },
           { id: 'social', label: 'Social ad or reel', m: 0.95 }, { id: 'kinetic', label: 'Kinetic type or lyric video', m: 0.85 },
           { id: 'ui', label: 'UI or app walkthrough', m: 1 }, { id: 'data', label: 'Data or infographic film', m: 1.1 },
           { id: 'titles', label: 'Title sequence or opener', m: 1.25 }, { id: 'logo', label: 'Logo animation or sting', m: 1.3 },
-          { id: 'broadcast', label: 'Broadcast package (bumpers, lower thirds)', m: 1.15 }, { id: 'stage', label: 'Event or stage screen visuals', m: 1 }
-        ] },
+          { id: 'broadcast', label: 'Broadcast package (bumpers, lower thirds)', m: 1.15 }, { id: 'stage', label: 'Event or stage screen visuals', m: 1 },
+          { id: 'skit', label: 'Character skit ad (story, product demo, end card)', m: 1.1 }
+        ], notes: { skit: 'A short story with characters, then your product in use, then the end card. Add “Character animation” and “App screens” below if they’re part of it.' } },
         { id: 'blend', type: 'multi', label: 'Mixed with anything else?', hint: 'For mixed projects. Choose all that apply.', options: [
           { id: 'footage', label: 'Live-action footage', m: 1.15 }, { id: '3d', label: '3D elements', m: 1.35 },
           { id: 'char', label: 'Character animation', m: 1.4 }, { id: 'vfx', label: 'Compositing or VFX', m: 1.2 },
-          { id: 'screen', label: 'Screen recordings', m: 1.05 }
+          { id: 'screen', label: 'App screens or product walkthrough', m: 1.12 }
+        ] },
+        { id: 'chars', type: 'range', label: 'Characters', hint: 'Count everyone who appears, including small parts.', unit: '', min: 1, max: 8, step: 1, def: 1, scale: { ref: 1, exp: 0.25 }, show: { q: 'blend', in: ['char'] } },
+        { id: 'dialogue', type: 'single', label: 'Do the characters speak?', show: { q: 'blend', in: ['char'] }, options: [
+          { id: 'none', label: 'No, music or narration only', def: true },
+          { id: 'lines', label: 'Yes, with lip-sync', m: 1.25, pass: 15000, perChar: true, aiScale: true, line: 'Character voices' }
+        ] },
+        { id: 'lang', type: 'single', label: 'Language', options: [
+          { id: 'en', label: 'English', def: true }, { id: 'pcm', label: 'Pidgin' },
+          { id: 'local', label: 'Yoruba, Igbo, Hausa or another language', m: 1.05 }, { id: 'mix', label: 'A mix', m: 1.03 }
         ] },
         { id: 'length', type: 'range', label: 'Length', unit: 's', min: 5, max: 600, step: 5, def: 120, scale: { ref: 135, exp: 0.85 } },
         { id: 'style', type: 'single', label: 'Visual style', options: [
@@ -270,7 +305,7 @@ window.RATES = {
     },
     {
       id: 'anim2d', label: '2D animation', blurb: 'Character animation, stories, series and kids content', colour: '#038eee', tiles: [3, 4, 5],
-      base: 500000, min: 170000, rights: true, production: ['ai', 'disclose', 'signoff', 'look'], logistics: ['turnaround', 'revisions', 'brand', 'formats', 'channels', 'territory', 'term', 'portfolio'],
+      base: 500000, min: 170000, rights: true, production: ['ai', 'disclose', 'reference', 'charRights', 'signoff', 'look'], logistics: ['turnaround', 'revisions', 'brand', 'formats', 'channels', 'territory', 'term', 'portfolio'],
       questions: [
         { id: 'variant', type: 'single', label: 'What kind of piece?', options: [
           { id: 'explainer', label: 'Character explainer', def: true }, { id: 'story', label: 'Short story or film', m: 1.15 },
@@ -306,7 +341,7 @@ window.RATES = {
     },
     {
       id: 'anim3d', label: '3D animation', blurb: 'Product visualisation, launch films and 3D scenes', colour: '#a57bff', tiles: [0, 4, 8],
-      base: 570000, min: 170000, rights: true, production: ['ai', 'disclose', 'signoff', 'look'], logistics: ['turnaround', 'revisions', 'brand', 'formats', 'channels', 'territory', 'term', 'portfolio'],
+      base: 570000, min: 170000, rights: true, production: ['ai', 'disclose', 'reference', 'charRights', 'signoff', 'look'], logistics: ['turnaround', 'revisions', 'brand', 'formats', 'channels', 'territory', 'term', 'portfolio'],
       questions: [
         { id: 'variant', type: 'single', label: 'What kind of piece?', options: [
           { id: 'turn', label: 'Product turntable or hero shots', m: 0.75 }, { id: 'launch', label: 'Product launch film', def: true },
@@ -340,7 +375,7 @@ window.RATES = {
     },
     {
       id: 'film', label: 'Film and video production', blurb: 'Directing and shooting commercials, short films, documentaries, events and church media', colour: '#d903ee', tiles: [0, 4, 8],
-      base: 0, min: 170000, rights: true, production: ['ai', 'disclose', 'signoff', 'look'], logistics: ['turnaround', 'revisions', 'brand', 'formats', 'channels', 'territory', 'term', 'portfolio'],
+      base: 0, min: 170000, rights: true, production: ['ai', 'disclose', 'reference', 'signoff', 'look'], logistics: ['turnaround', 'revisions', 'brand', 'formats', 'channels', 'territory', 'term', 'portfolio'],
       questions: [
         { id: 'variant', type: 'single', label: 'What are we making?', options: [
           { id: 'brand', label: 'Brand or corporate film', b: 500000, def: true }, { id: 'ad', label: 'Commercial', b: 600000 },
@@ -389,7 +424,7 @@ window.RATES = {
     },
     {
       id: 'edit', label: 'Editing and post', blurb: 'Edits from your footage: social, YouTube, promos, events and sermons', colour: '#ffa800', tiles: [0, 2, 6, 8],
-      base: 65000, min: 35000, rights: false, production: ['ai', 'disclose', 'signoff', 'look'], logistics: ['turnaround', 'revisions', 'brand', 'formats', 'portfolio'],
+      base: 65000, min: 35000, rights: false, production: ['ai', 'disclose', 'reference', 'signoff', 'look'], logistics: ['turnaround', 'revisions', 'brand', 'formats', 'portfolio'],
       questions: [
         { id: 'variant', type: 'single', label: 'What kind of edit?', options: [
           { id: 'social', label: 'Social reel or short', m: 1 }, { id: 'yt', label: 'YouTube or long-form', def: true },
@@ -437,7 +472,7 @@ window.RATES = {
     },
     {
       id: 'identity', label: 'Brand identity', blurb: 'Logos, identity systems, guidelines and rebrands', colour: '#6403ee', tiles: [1, 4],
-      base: 0, min: 170000, rights: false, production: ['ai', 'disclose', 'signoff'], logistics: ['turnaround', 'revisions', 'portfolio'],
+      base: 0, min: 170000, rights: false, production: ['ai', 'disclose', 'reference', 'signoff'], logistics: ['turnaround', 'revisions', 'portfolio'],
       questions: [
         { id: 'variant', type: 'single', label: 'Scope', options: [
           { id: 'logo', label: 'Logo only', b: 255000 }, { id: 'basic', label: 'Logo and basic identity', b: 500000, def: true },
@@ -474,7 +509,7 @@ window.RATES = {
     },
     {
       id: 'motionsys', label: 'Motion identity and templates', blurb: 'Motion systems, channel kits, Essential Graphics and automated templates', colour: '#03ee63', tiles: [0, 1, 2, 3, 4, 5, 6, 7, 8],
-      base: 0, min: 85000, rights: false, production: ['ai', 'disclose', 'signoff', 'look'], logistics: ['turnaround', 'revisions', 'brand', 'portfolio'],
+      base: 0, min: 85000, rights: false, production: ['ai', 'disclose', 'reference', 'signoff', 'look'], logistics: ['turnaround', 'revisions', 'brand', 'portfolio'],
       questions: [
         { id: 'variant', type: 'single', label: 'Scope', options: [
           { id: 'logo', label: 'Logo animation only', b: 130000 }, { id: 'yt', label: 'Channel kit (intro, end screen, lower thirds)', b: 400000, def: true },
@@ -497,7 +532,7 @@ window.RATES = {
     },
     {
       id: 'artdir', label: 'Art direction', blurb: 'Creative direction, style frames, treatments and production design', colour: '#d903ee', tiles: [1, 3, 5, 7],
-      base: 135000, min: 85000, rights: false, production: ['ai', 'disclose', 'signoff'], logistics: ['turnaround', 'revisions', 'brand', 'portfolio'],
+      base: 135000, min: 85000, rights: false, production: ['ai', 'disclose', 'reference', 'signoff'], logistics: ['turnaround', 'revisions', 'brand', 'portfolio'],
       questions: [
         { id: 'variant', type: 'single', label: 'What do you need?', options: [
           { id: 'frames', label: 'Style frames and look development', def: true }, { id: 'campaign', label: 'Campaign art direction', m: 1.2 },

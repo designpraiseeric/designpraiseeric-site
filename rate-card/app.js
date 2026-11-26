@@ -43,7 +43,9 @@
   function allQ(c) { return c.questions.concat(prodQ(c), logistics(c)); }
   function visible(c, q) {
     var rule = q.show || q.hideIf; if (!rule) return true;
-    var w = allQ(c).find(function (x) { return x.id === rule.q; }), hit = !!w && rule.in.indexOf(val(c, w)) > -1;
+    if (rule.cats && rule.cats.indexOf(c.id) < 0) return true;
+    var w = allQ(c).find(function (x) { return x.id === rule.q; }), wv = w ? val(c, w) : null;
+    var hit = !!w && (Array.isArray(wv) ? wv.some(function (x) { return rule.in.indexOf(x) > -1; }) : rule.in.indexOf(wv) > -1);
     return q.show ? hit : !hit;
   }
   function logistics(c) { return (c.logistics || []).map(function (id) { return id === 'formats' ? R.shared.videoFormats : R.shared[id]; }).filter(Boolean); }
@@ -90,6 +92,7 @@
     var base = c.base, mult = 1, scale = 1, u = T.u, lines = [], pass = [], perMin = 1, perDay = 1, chosen = [], unsure = 0;
     var lenQ = c.questions.find(function (q) { return q.id === 'length'; }); if (lenQ) perMin = Math.max(1, val(c, lenQ) / 60);
     var dayQ = c.questions.find(function (q) { return q.id === 'days'; }); if (dayQ) perDay = val(c, dayQ);
+    var charQ = c.questions.find(function (q) { return q.id === 'chars'; }), chars = charQ && visible(c, charQ) ? val(c, charQ) : 0;
     all.forEach(function (q) {
       if (q.type === 'range') { if (q.scale) scale *= Math.pow(val(c, q) / q.scale.ref, q.scale.exp); return; }
       if (q.type === 'assets') {
@@ -111,12 +114,14 @@
     var production = base * scale * mult, floored = false;
     if (production < (c.min || 0)) { production = c.min; floored = true; }
     chosen.forEach(function (x) {
-      var asset = x.q.type === 'assets', ns = asset ? needScale : 1;
-      var o = x.o, label = (o.line || o.label) + (asset && ns < 1 ? ' with AI' : ''), k = (o.perMin ? perMin : 1) * (o.perDay ? perDay : 1) * ns;
+      var asset = x.q.type === 'assets' || x.o.aiScale, ns = asset ? needScale : 1;
+      var o = x.o, label = (o.line || o.label) + (asset && ns < 1 ? ' with AI' : ''), k = (o.perMin ? perMin : 1) * (o.perDay ? perDay : 1) * (o.perChar ? Math.max(1, chars) : 1) * ns;
       if (o.p) lines.push({ label: label, v: production * o.p * ns });
       if (o.a) lines.push({ label: label, v: o.a * k });
       if (o.pass) pass.push({ label: label, v: o.pass * k });
     });
+    var merge = function (arr) { var m = {}, out = []; arr.forEach(function (l) { if (m[l.label]) m[l.label].v += l.v; else { m[l.label] = { label: l.label, v: l.v }; out.push(m[l.label]); } }); return out; };
+    lines = merge(lines); pass = merge(pass);
     var n = S.plan.count || 1, vd = volDisc(n);
     var ret = R.retainer.options.find(function (o) { return o.id === S.plan.retainer; }) || R.retainer.options[0];
     var disc = Math.max(vd, ret.off || 0), discFrom = (ret.off || 0) > vd ? 'retainer' : 'volume';
@@ -129,7 +134,12 @@
     if (disc) rows.push({ label: (discFrom === 'retainer' ? 'Retainer saving' : 'Volume saving') + ' (' + Math.round(disc * 100) + '%)', v: -work1 * n * disc * L * up, neg: true });
     if (tm < 1) rows.push({ label: T.t.label + ' discount (' + Math.round((1 - tm) * 100) + '%)', v: work1 * n * (1 - disc) * (tm - 1) * L, neg: true });
     pass.forEach(function (l) { rows.push({ label: l.label + ' (third party)' + (n > 1 ? ' × ' + n : ''), v: l.v * n * L }); });
-    var pre = (work1 * n * (1 - disc) * tm + pass1 * n) * L;
+    var setup = 0;
+    if (S.plan.series === 'yes') {
+      setup = (production * R.seriesSetup.share + chars * R.seriesSetup.perChar) * tm * L;
+      if (!ret.months) rows.push({ label: R.seriesSetup.line, v: setup });
+    }
+    var pre = (work1 * n * (1 - disc) * tm + pass1 * n) * L + (ret.months ? 0 : setup);
     if (payOff) rows.push({ label: 'Paid in full upfront (' + Math.round(payOff * 100) + '%)', v: -pre * payOff, neg: true });
     var total = pre * (1 - payOff);
     var b = R.band, lo = total * Math.max(0.5, b.lo - u * b.perUnsure * 0.5), hi = total * (b.hi + u * b.perUnsure);
@@ -141,13 +151,14 @@
     if (turn === 'rush' || turn === 'emerg') floor = Math.max(floor, R.depositFloor.rush);
     if (dep < floor && plan.length > 1) { var rest = 1 - dep; plan[0][1] = floor; for (var i = 1; i < plan.length; i++) plan[i][1] = plan[i][1] / rest * (1 - floor); }
     if (payOff) plan = [['Full payment before work starts', 1]];
+    if (ret.months && !payOff) plan = [['Each month, in advance', 1]];
     // timeline
     var speed = (R.shared.turnaround.options.find(function (o) { return o.id === turn; }) || {}).speed || 1;
     var effort = work1 * n * (1 - disc) / R.dayRate, weeks = (effort / 5 + 1) * speed;
     var timeline = turn === 'emerg' ? Math.max(2, Math.round(effort * 0.6)) + '–' + Math.max(4, Math.round(effort)) + ' working days, if I’m free' :
       ret.months ? 'Delivered through the month, ' + ret.months + ' months' :
         (function () { var a = Math.max(1, Math.round(weeks * 0.8)), z = Math.max(a + 1, Math.round(weeks * 1.25)); return a + '–' + z + ' weeks from approved brief'; })();
-    return { c: c, m: m, T: T, rows: rows, total: total, lo: lo, hi: hi, plan: plan, timeline: timeline, ret: ret, n: n, unsure: unsure, floored: floored, production: production };
+    return { c: c, m: m, T: T, rows: rows, total: total, setup: setup, chars: chars, lo: lo, hi: hi, plan: plan, timeline: timeline, ret: ret, n: n, unsure: unsure, floored: floored, production: production };
   }
 
   /* ---------------- money ---------------- */
@@ -230,7 +241,8 @@
   }
   function planHTML() {
     var cur = curInfo(), V = R.volume;
-    var h = rangeBlock('p.count', { label: V.label, hint: V.hint, min: V.min, max: V.max, step: 1, unit: '' }, S.plan.count);
+    var h = qBlock('p.series', R.series, chipGroup('p.series', R.series, S.plan.series || 'no'));
+    h += rangeBlock('p.count', { label: V.label, hint: V.hint, min: V.min, max: V.max, step: 1, unit: '' }, S.plan.count);
     h += qBlock('p.retainer', { label: R.retainer.label, hint: R.retainer.note }, chipGroup('p.retainer', R.retainer, S.plan.retainer));
     h += qBlock('p.pay', R.payPref, chipGroup('p.pay', R.payPref, S.plan.pay));
     h += qBlock('p.budget', R.budget, '<label class="fl money"><span>' + cur.symbol + '</span><input id="budget" inputmode="numeric" autocomplete="off" placeholder="e.g. ' + (cur.id === 'NGN' ? '250,000' : '1,500') + '" value="' + esc(S.plan.budget) + '" aria-label="Budget in ' + esc(cur.name) + '"></label><p class="budget" id="budgetMsg" hidden></p>');
@@ -323,7 +335,7 @@
     var k = b.dataset.k, v = b.dataset.v;
     if (k === 'mkt') {
       pressGroup(b); S.market = v; var m = market(); if (!S.cur || m.currencies.indexOf(S.cur) < 0) S.cur = m.def;
-      if (S.about.revenue && !optsOf(R.about[2]).find(function (o) { return o.id === S.about.revenue; })) delete S.about.revenue;
+      if (S.about.revenue && !optsOf(R.about.find(function (q) { return q.id === 'revenue'; })).find(function (o) { return o.id === S.about.revenue; })) delete S.about.revenue;
       rerender(0); rerender(4); changed(); return;
     }
     if (k === 'cur') { pressGroup(b); setCur(v); return; }
@@ -378,19 +390,32 @@
     var rows = '<div class="rows">' + E.rows.map(function (r) { return '<div class="' + (r.neg ? 'neg' : '') + '"><span>' + esc(r.label) + '</span><span>' + fmt(r.v, cur) + '</span></div>'; }).join('') + '<div class="sum"><span>Most likely</span><span>' + fmt(E.total, cur) + '</span></div></div>';
     var parts = milestones(E, cur);
     var pay = '<div><h4>Payment</h4><div class="ms">' + E.plan.map(function (p, i) { return '<div style="--c:' + HC[(i * 2 + 3) % 9] + '"><i></i><span>' + esc(p[0]) + ' (' + Math.round(p[1] * 100) + '%)</span><span>' + cur.symbol + parts[i].toLocaleString('en-GB') + '</span></div>'; }).join('') + '</div></div>';
-    var ret = E.ret.months ? '<div class="budget"><b>Retainer:</b> about ' + fmt(E.total, cur) + ' a month for ' + E.ret.months + ' months (' + E.n + (E.n === 1 ? ' piece' : ' pieces') + ' a month), billed monthly in advance.</div>' : '';
+    var ret = E.ret.months ? '<div class="budget"><b>Retainer:</b> about ' + fmt(E.total, cur) + ' a month for ' + E.ret.months + ' months (' + E.n + (E.n === 1 ? ' piece' : ' pieces') + ' a month), billed monthly in advance' + (E.setup ? ', plus a one-off setup of ' + fmt(E.setup, cur) + ' with the first month' : '') + '.</div>' : '';
     var bmsg = '', bv = Number(String(S.plan.budget).replace(/,/g, ''));
     if (bv) { var bn = bv * cur.fx; bmsg = bn < E.lo ? R.copy.budgetLow : bn > E.hi ? R.copy.budgetHigh : R.copy.budgetFits; }
     var bm = $('budgetMsg'); if (bm) { bm.hidden = !bmsg; bm.textContent = bmsg; bm.className = 'budget' + (bv && bv * cur.fx < E.lo ? ' low' : ''); }
+    var cmp = compareAI(E, cur);
     est.innerHTML = head + '<div class="tot" id="tot">' + rangeHTML(E, cur) + '</div><p class="sub">' + esc(E.c.label) + (E.n > 1 ? ' · ' + E.n + ' pieces' : '') + (E.unsure ? ' · range widened for “not sure” answers' : '') + '</p>' + curBtns + '</div>' +
       '<div class="bd">' + rows + '<div class="kv"><b>Timeline</b><span>' + esc(E.timeline) + '</span><b>Revisions</b><span>' + esc((R.shared.revisions.options.find(function (o) { return o.id === val(E.c, R.shared.revisions); }) || {}).label || '') + '</span><b>Market</b><span>' + esc(E.m.label) + '</span>' + (cur.id !== 'NGN' ? '<b>Rate</b><span>' + esc(fxLine(cur)) + '</span>' : '') + '</div>' + pay + ret +
-      (bmsg ? '<div class="budget' + (bv * cur.fx < E.lo ? ' low' : '') + '">' + esc(bmsg) + '</div>' : '') + '<p class="note">' + esc(R.copy.estimate) + '</p></div>';
+      (bmsg ? '<div class="budget' + (bv * cur.fx < E.lo ? ' low' : '') + '">' + esc(bmsg) + '</div>' : '') + cmp + '<p class="note">' + esc(R.copy.estimate) + '</p></div>';
     if (tot !== lastTot && lastTot && !reduce) { var t = $('tot'); t.classList.add('tick'); }
     lastTot = tot;
     $('barTotal').textContent = tot; $('bar').hidden = false;
     bindEst();
   }
+  /* Same project, every AI approach side by side; tap one to switch. */
+  function compareAI(E, cur) {
+    var c = E.c, q = R.production.ai; if (!c.production || c.production.indexOf('ai') < 0) return '';
+    var curV = val(c, q), saved = (S.ans[c.id] || {}).ai, rows = optsOf(q).map(function (o) {
+      setVal(c, q, o.id); var X = compute(); return { o: o, v: X.total };
+    });
+    if (saved === undefined) delete S.ans[c.id].ai; else setVal(c, q, saved);
+    return '<div><h4>Ways to make it</h4><div class="cmp">' + rows.map(function (r) {
+      return '<button type="button" data-ai="' + r.o.id + '" aria-pressed="' + (r.o.id === curV) + '"><span>' + esc(r.o.label) + '</span><b>' + fmt(r.v, cur) + (E.ret.months ? '/mo' : '') + '</b></button>';
+    }).join('') + '</div></div>';
+  }
   function bindEst() {
+    est.querySelectorAll('[data-ai]').forEach(function (b) { b.onclick = function () { var c = cat(); setVal(c, R.production.ai, b.dataset.ai); rerender(2); rerender(3); changed(); }; });
     est.querySelectorAll('[data-cur]').forEach(function (b) { b.onclick = function () { if (!b.disabled) setCur(b.dataset.cur); }; });
     var cs = $('closeSheet'); if (cs) cs.onclick = closeSheet;
   }
@@ -464,6 +489,9 @@
     if (S.plan.budget) L.push('Client budget: ' + cur.symbol + S.plan.budget);
     if (E.unsure) L.push('“Not sure” answers: ' + E.unsure);
     if (E.floored) L.push('Minimum project fee applied.');
+    if (E.setup) L.push('Series setup (one-off): ' + fmt(E.setup, cur) + (E.ret.months ? ', billed with the first month' : ', included above'));
+    if (S.about['for'] === 'other') L.push('NOTE: arranged by an intermediary for another organisation; tier answers are about the paying organisation.');
+    var refQ = R.production.reference; if (E.c.production && E.c.production.indexOf('reference') > -1 && val(E.c, refQ) === 'close') L.push('FLAG: wants something close to a specific ad or film. Check whose, and steer to an original look.');
     var aiQ = R.production.ai, aiV = E.c.production && E.c.production.indexOf('ai') > -1 ? val(E.c, aiQ) : null;
     if (aiV) L.push('AI in the production: ' + labelOf(aiQ, aiV) + (aiV === 'elements' || aiV === 'led' ? ' (rights note: AI-generated parts may not be copyrightable; exclusivity not guaranteed for them)' : ''));
     hr('Tier');
@@ -471,7 +499,7 @@
     aboutPairs().forEach(function (p) { L.push(p[0] + ': ' + p[1]); });
     hr('Selections');
     selections().forEach(function (p) { L.push(p[0] + ': ' + p[1]); });
-    L.push('How many: ' + S.plan.count, 'Ongoing: ' + labelOf(R.retainer, S.plan.retainer), 'Payment preference: ' + labelOf(R.payPref, S.plan.pay));
+    L.push('Series: ' + labelOf(R.series, S.plan.series || 'no'), 'How many: ' + S.plan.count, 'Ongoing: ' + labelOf(R.retainer, S.plan.retainer), 'Payment preference: ' + labelOf(R.payPref, S.plan.pay));
     if (AI.follow.qs.length) { hr('Extra details'); AI.follow.qs.forEach(function (q) { var a = AI.follow.ans[q.id]; L.push(q.q + ' ' + (a == null || a === '' ? '(skipped)' : Array.isArray(a) ? a.join(', ') : a)); }); }
     if (S.refs.links.trim() || AI.refs.summary) { hr('References'); if (S.refs.links.trim()) L.push(S.refs.links.trim()); if (AI.refs.summary) L.push('Read of the references: ' + AI.refs.summary); AI.refs.notes.forEach(function (n) { L.push('  ' + n); }); }
     hr('Activity');
