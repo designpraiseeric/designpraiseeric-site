@@ -63,7 +63,7 @@
   function qBlock(key, q, inner) { return '<div class="q" data-qwrap="' + key + '"><div class="ql" id="ql-' + key.replace(/\W/g, '-') + '">' + esc(q.label) + '</div>' + (q.hint ? '<p class="qh">' + esc(q.hint) + '</p>' : '') + inner + '</div>'; }
   function rangeBlock(key, q, v) {
     var f = ((v - q.min) / (q.max - q.min) * 100).toFixed(1);
-    return qBlock(key, q, '<div class="rng"><input type="range" data-k="' + key + '" min="' + q.min + '" max="' + q.max + '" step="' + q.step + '" value="' + v + '" style="--f:' + f + '%" aria-label="' + esc(q.label) + '"><output id="o-' + key.replace(/\W/g, '-') + '">' + esc(unitTxt(q, v)) + '</output><div class="ticks"><span>' + esc(unitTxt(q, q.min)) + '</span><span>' + esc(unitTxt(q, q.max)) + '</span></div></div>');
+    return qBlock(key, q, '<div class="rng"><input type="range" data-k="' + key + '" min="' + q.min + '" max="' + q.max + '" step="' + q.step + '" value="' + v + '" style="--f:' + f + '%" aria-label="' + esc(q.label) + '"><output id="o-' + key.replace(/\W/g, '-') + '">' + esc(unitTxt(q, v)) + '</output><div class="ticks"><span>' + esc(unitTxt(q, q.min)) + '</span><span>' + esc(unitTxt(q, q.max)) + '</span></div><p class="pa" id="pa-' + key.replace(/\W/g, '-') + '" hidden></p></div>');
   }
   function assetsBlock(key, q, v) {
     return qBlock(key, q, '<div class="assets">' + q.items.map(function (it) {
@@ -295,7 +295,7 @@
     var shown = E.checks.filter(function (x) { return x.level !== 'flag'; });
     var st = R.copy.status[E.status] ? '<span class="st st-' + E.status + '">' + esc(R.copy.status[E.status]) + '</span>' : '';
     var checksHTML = shown.length ? '<div class="checks">' + shown.map(function (x) { return '<p class="ck ck-' + x.level + '">' + esc(x.msg) + '</p>'; }).join('') + '</div>' : '';
-    Object.keys(E.effective).forEach(function (k) { var o = $('o-c-' + k), q = allQ(E.c).find(function (x) { return x.id === k; }); if (o && q) o.textContent = unitTxt(q, val(E.c, q)) + ' · priced as ' + unitTxt(q, E.effective[k]); });
+    E.c.questions.forEach(function (q) { var pa = $('pa-c-' + q.id); if (!pa) return; var e = E.effective[q.id]; pa.hidden = e == null; pa.textContent = e == null ? '' : 'Priced as ' + unitTxt(q, e) + ', the realistic minimum. See the estimate for why.'; });
     var rows = '<div class="rows">' + E.rows.map(function (r) { return '<div class="' + (r.neg ? 'neg' : '') + '"><span>' + esc(r.label) + '</span><span>' + fmt(r.v, cur) + '</span></div>'; }).join('') + '<div class="sum"><span>Most likely</span><span>' + fmt(E.total, cur) + '</span></div></div>';
     var parts = milestones(E, cur);
     var pay = '<div><h4>Payment</h4><div class="ms">' + E.plan.map(function (p, i) { return '<div style="--c:' + HC[(i * 2 + 3) % 9] + '"><i></i><span>' + esc(p[0]) + ' (' + Math.round(p[1] * 100) + '%)</span><span>' + cur.symbol + parts[i].toLocaleString('en-GB') + '</span></div>'; }).join('') + '</div></div>';

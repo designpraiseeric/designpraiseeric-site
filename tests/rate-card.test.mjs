@@ -48,7 +48,7 @@ test('full-length event coverage is not long-form', () => {
 
 test('more locations or a large cast need more shoot days', () => {
   const a = run(state('film', { variant: 'short', length: 900, days: 0.5 })).effective.days;
-  const b = run(state('film', { variant: 'short', length: 900, days: 0.5, loc: 'l4', cast: 'many' })).effective.days;
+  const b = run(state('film', { variant: 'short', length: 900, days: 0.5, locs: 4, cast: 'actors', actors: 8 })).effective.days;
   assert.ok(b > a, a + ' → ' + b);
 });
 
@@ -216,4 +216,32 @@ test('no discount table has a step where one more unit costs less (so the % show
     let prev = 0;
     t.forEach((st) => { assert.ok((st.from - 1) * (1 - prev) <= st.from * (1 - st.off) + 1e-9, JSON.stringify(t)); prev = st.off; });
   });
+});
+
+/* ---------- exact counts (PR #12) ---------- */
+test('film: actors are paid per actor per shoot day, and only when actors are hired', () => {
+  const E = run(state('film', { cast: 'actors', actors: 5, days: 2 }));
+  const row = E.rows.find((r) => /^Actors × 5/.test(r.label));
+  assert.ok(row && Math.abs(row.v - 50000 * 5 * 2) < 1, row && row.label);
+  const none = run(state('film', { cast: 'none', actors: 5 }));
+  assert.ok(!none.rows.some((r) => /Actors/.test(r.label)));
+  const ai = run(state('film', { cast: 'actors', actors: 5, ai: 'led' }));
+  assert.ok(!ai.rows.some((r) => /Actors/.test(r.label)), 'AI-led has no shoot, so no actors');
+});
+
+test('film: more locations than a day can cover raises the shoot days', () => {
+  const E = run(state('film', { variant: 'brand', length: 90, days: 1, locs: 7 }));
+  assert.ok(E.effective.days >= 2.5, E.effective.days);
+  assert.match(E.checks.find((x) => x.id === 'days-min').msg, /get round 7 locations/);
+  assert.equal(run(state('film', { variant: 'brand', length: 90, days: 1, locs: 2 })).status, 'ready');
+});
+
+test('3D: products, shots and speaking characters all add cost', () => {
+  const base = run(state('anim3d')).total;
+  assert.ok(run(state('anim3d', { products: 4 })).total > base);
+  assert.ok(run(state('anim3d', { shots: 20 })).total > base);
+  const c1 = run(state('anim3d', { variant: 'char' })), c3 = run(state('anim3d', { variant: 'char', chars: 3, dialogue: 'lines' }));
+  assert.ok(c3.total > c1.total * 1.5);
+  assert.ok(c3.rows.some((r) => /Character voices/.test(r.label)));
+  assert.equal(run(state('anim3d', { variant: 'char', products: 9 })).total, c1.total, 'products don’t apply to character work');
 });
