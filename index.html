@@ -9,9 +9,6 @@
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#0e0820">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
-<script>/* main site not open yet: js/dp-gate.js covers it with the under-construction splash (owner: ?preview=on) */try{if(localStorage.getItem("dp-preview")!=="1"){document.documentElement.classList.add("dp-gated");setTimeout(function(){document.documentElement.classList.remove("dp-gated")},6000)}}catch(e){document.documentElement.classList.add("dp-gated")}</script>
-<style>html.dp-gated body{visibility:hidden}</style>
-<meta name="robots" content="noindex">
 <script>try{let t="dark";try{t=localStorage.getItem("dp-theme")||"dark"}catch(e){}document.documentElement.dataset.theme=t}catch(e){document.documentElement.dataset.theme="dark"}</script>
 <style>
 /* VOICE: a professional studio site that moves — plain words, lively surfaces
@@ -103,6 +100,8 @@ nav .btn{min-height:40px;padding:0 16px;font-size:14px}
 .reel .ov span{font:500 12px var(--mono);color:#cfc6ea}
 .play{position:absolute;left:50%;top:50%;translate:-50% -50%;width:76px;height:76px;border-radius:50%;border:0;background:#fff;cursor:pointer;display:grid;place-items:center;box-shadow:0 12px 40px rgba(0,0,0,.35);transition:scale .3s var(--out);z-index:2}
 .play:hover{scale:1.07}
+.play::after{content:"Watch the latest film · ChimpX";position:absolute;top:calc(100% + 12px);left:50%;translate:-50% 0;white-space:nowrap;font:600 14px var(--sans);color:#fff;padding:7px 13px;border-radius:99px;background:rgba(18,10,38,.62);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none}
+@media(max-width:560px){.play::after{content:"Latest film";font-size:12px}}
 .play::before{content:"";border-left:20px solid var(--violet);border-top:12px solid transparent;border-bottom:12px solid transparent;margin-left:6px}
 /* quarter-turn tiles (work, services, tools) */
 .qt{perspective:1400px}
@@ -129,6 +128,13 @@ a.case{color:inherit;text-decoration:none}
 .case .face.b .mono{color:#a99ccf}
 .case h3{font-size:19px}
 .case .meta{font-size:15px;color:var(--mute);margin-top:4px}
+.case[hidden]{display:none}
+.case.more .face.a{display:grid;place-items:center;background:var(--paper);box-shadow:inset 0 0 0 1.5px var(--line)}
+.mt{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;width:34%;aspect-ratio:1;perspective:500px}
+.mt i{border-radius:6px;background:var(--line);transform-style:preserve-3d;animation:mtTurn 6s cubic-bezier(.7,0,.2,1) infinite;animation-delay:calc(var(--i)*.08s)}
+.mt i:nth-child(odd){background:color-mix(in srgb,var(--c) 70%,var(--line))}
+@keyframes mtTurn{0%,25%{transform:rotateY(0)}35%,65%{transform:rotateY(180deg)}75%,100%{transform:rotateY(360deg)}}
+@media(prefers-reduced-motion:reduce){.mt i{animation:none}}
 .soon{position:absolute;right:10px;top:10px;font:500 11px var(--mono);background:var(--card);color:var(--mute);padding:3px 8px;border-radius:6px}
 dialog{border:0;border-radius:20px;padding:0;width:min(820px,94vw);color:var(--ink);background:var(--card);box-shadow:0 30px 80px rgba(26,13,62,.25)}
 dialog[open]{animation:dlg .45s var(--out)}
@@ -218,8 +224,10 @@ input[type=range]{width:100%;accent-color:var(--violet);height:30px}
 /* about */
 .about{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:clamp(32px,6vw,96px);align-items:start}
 @media(max-width:860px){.about{grid-template-columns:1fr}}
+.portrait img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .8s var(--out)}.portrait:hover img{transform:scale(1.03)}
+.portrait .pd{display:none}:root[data-theme=light] .portrait .pd{display:block}:root[data-theme=light] .portrait .pn{display:none}
 .portrait{aspect-ratio:4/5;border-radius:16px;background:linear-gradient(170deg,var(--tint),var(--ph2));position:relative;overflow:hidden}
-.portrait::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at var(--px,50%) var(--py,30%),color-mix(in srgb,var(--card) 55%,transparent),transparent 45%);transition:background .2s}
+.portrait::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at var(--px,50%) var(--py,30%),rgba(255,255,255,.35),transparent 45%);mix-blend-mode:soft-light;pointer-events:none;transition:background .2s}
 .about .txt{display:grid;gap:18px}
 .vals{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
 .vals span{font-size:14px;font-weight:550;padding:6px 12px;border-radius:999px;background:var(--paper);transition:background .24s,color .24s}
@@ -309,7 +317,7 @@ footer a{color:var(--ink);text-decoration:none}footer a:hover{color:var(--violet
 <div class="ctas"><a class="btn mag" href="#contact">Start a project</a><a class="btn line mag" href="#work">View work</a></div>
 </div>
 </div>
-<div class="reel" id="reel" aria-label="Frames from recent work"><button class="play" type="button" aria-label="Play showreel"></button><div class="ov"><b>Showreel 2026</b><span id="reelCap"></span></div></div>
+<div class="reel" id="reel" aria-label="Frames from recent work"><a class="play" href="/work/chimpx/" aria-label="Watch the latest film: ChimpX"></a><div class="ov"><b>Recent work</b><span id="reelCap"></span></div></div>
 </div></section>
 
 <section id="work" class="paper" data-p="1"><div class="wrap">
@@ -325,6 +333,7 @@ footer a{color:var(--ink);text-decoration:none}footer a:hover{color:var(--violet
 <div class="svc" id="svc"></div>
 <span class="lt" style="margin-top:88px"><h3 style="font-size:24px">Process</h3></span>
 <div class="steps" id="steps"></div>
+<p style="margin-top:22px"><a class="link" href="/how-i-work/">How a project runs, step by step →</a></p>
 </div></section>
 
 <section id="tools" class="paper" data-p="3"><div class="wrap">
@@ -335,7 +344,7 @@ footer a{color:var(--ink);text-decoration:none}footer a:hover{color:var(--violet
 </div></section>
 
 <section id="about" data-p="4"><div class="wrap about">
-<div class="portrait rv" id="portrait"><span class="soon">Portrait</span></div>
+<div class="portrait rv" id="portrait"><picture class="pn"><source srcset="img/eric-night.webp" type="image/webp"><img src="img/eric-night.jpg" alt="Divinepraise Eric, a 3D portrait" width="880" height="1100" loading="lazy"></picture><picture class="pd"><source srcset="img/eric-day.webp" type="image/webp"><img src="img/eric-day.jpg" alt="" width="880" height="1100" loading="lazy"></picture></div>
 <div class="txt">
 <span class="lt"><h2>About</h2></span>
 <p class="lead">I run DesignPraise Studio in Lagos. I direct and design motion, edit and finish films, animate in 2D and 3D, and write the scripts and plugins that make production faster.</p>
@@ -506,29 +515,23 @@ setTimeout(()=>{c.cb.querySelector('.fr').style.background=bg(src,c);c.cb.style.
 let n=0;const step=()=>{if(document.hidden||reduce)return;cur=(cur+1)%FR.length;const src=FR[cur][0],byRow=n++%2===0,order=[0,1,2].sort(()=>Math.random()-.5);
 order.forEach((k,j)=>cells.filter(c=>(byRow?c.r:c.c)===k).forEach(c=>turnCell(c,src,byRow?'y':'x',1,j*170)));setTimeout(()=>$('reelCap').textContent=FR[cur][1],600)};
 let iv=null;new IntersectionObserver(es=>es.forEach(e=>{clearInterval(iv);if(e.isIntersecting)iv=setInterval(step,2600)})).observe(reel);
-reel.querySelector('.play').onclick=e=>{e.currentTarget.animate([{scale:1},{scale:.9},{scale:1}],{duration:300});$('reelCap').textContent='Showreel coming soon'}}
+}
 
 /* ===== work ===== */
 const WORK=[
-{t:'ChimpX',c:'anim',m:'Product film · Motion design and 3D',img:'/media/chimpx/chimpx-poster.webp',loop:'/media/chimpx/chimpx-loop',url:'/work/chimpx/',txt:'A 20-second film for a DeFi app where you type what you want and its AI does the rest: a 3D phone, one typed request, and a turn to mint at the end.',dl:[['Client','ChimpX'],['Role','Direction, 3D, animation, edit, sound'],['Tools','After Effects, Premiere Pro'],['Runtime','20 seconds']]},
-{t:'Purple',c:'film',m:'Short film · Writer and director',art:'#6403ee',txt:'A short film in development: script, director’s treatment, storyboard and casting references.',dl:[['Status','In development'],['Role','Writer, director'],['Format','Short film'],['Stage','Treatment and storyboard']]},
-{t:'Aró',c:'film',m:'Short film · Director',art:'#ffa800',txt:'A short film in development, with a director’s treatment and visual references.',dl:[['Status','In development'],['Role','Director'],['Format','Short film'],['Stage','Treatment']]},
-{t:'Danfo',c:'film',m:'Short film · Writer, director and editor',art:'#eed903',txt:'A one-minute portrait of a Lagos morning on a danfo bus, written and directed shot by shot and graded as a single piece.',dl:[['Role','Writer, director, editor'],['Runtime','About 60 seconds'],['Tools','Video generation, DaVinci Resolve'],['Setting','Lagos']]},
-{t:'Little Saints',c:'anim',m:'Animated series · Direction and animation',art:'#03eed8',txt:'An animated children’s series introducing the foundations of the Christian faith in short episodes, with simple, readable characters and warm, physical motion.',dl:[['Client','DesignPraise Studio'],['Role','Direction, animation'],['Tools','Blender, After Effects'],['Format','Episodic series']]},
-{t:'Colour, re-staged',c:'film',m:'Still series · Art direction',img:'img/frame-psy-red.jpg',txt:'A series of frames illustrating the language of colour in film, each re-staged in a Nigerian setting with original characters. Made for Colored Lens.',dl:[['Client','Colored Lens'],['Role','Art direction, writing'],['Tools','Image generation, grading'],['Scope','Full encyclopedia']]},
-{t:'Summit opening film',c:'film',m:'Event film · Edit and titles',art:'#d903ee',txt:'An opening film for a corporate summit in Mauritius, cut to the structure of a commissioned score with titles timed to the music.',dl:[['Client','Corporate event'],['Role','Edit, titles, music brief'],['Tools','Premiere Pro, After Effects'],['Location','Mauritius']]},
-{t:'Beholding with Iyanu',c:'sys',m:'Identity and motion kit',art:'#a57bff',txt:'A calm, recognisable identity for a devotional YouTube channel, with a motion kit of intro, lower thirds, end screens and thumbnail templates.',dl:[['Client','Beholding with Iyanu'],['Role','Art direction, motion'],['Tools','Illustrator, After Effects'],['Deliverables','Identity, motion kit, templates']]},
-{t:'CHS224 lesson system',c:'sys',m:'Graphics system · Design and scripting',art:'#038eee',txt:'A lesson-video system for a university course: one After Effects template, driven by subtitle timing, places every title and overlay automatically across the series.',dl:[['Client','University course'],['Role','Design, scripting'],['Tools','After Effects, ExtendScript'],['Scope','48 episodes']]},
-{t:'Asaapu',c:'sys',m:'Brand identity · Art direction',art:'#03ee63',txt:'An identity proposal for a fintech product: a mark that holds at small sizes and a steady motion language for money in motion.',dl:[['Client','Asaapu'],['Role','Art direction'],['Tools','Illustrator, Figma, After Effects'],['Deliverables','Identity proposal and deck']]}
+{t:'ChimpX',c:'anim',m:'Product film · Motion design and 3D',img:'/media/chimpx/chimpx-poster.webp',loop:'/media/chimpx/chimpx-loop',url:'/work/chimpx/',txt:'A 20-second film for a DeFi app where you type what you want and its AI does the rest: a 3D phone, one typed request, and a turn to mint at the end.',dl:[['Client','ChimpX'],['Role','Direction, 3D, animation, edit, sound'],['Tools','After Effects, Premiere Pro'],['Runtime','20 seconds']]}
 ];
+/* "more to come" cards: one for All, one per category. Remove a category's card once it has a few pieces. */
+const MORE=[['all','More on the way','#a57bff','More pieces are being written up and will appear here one at a time.'],['film','More films on the way','#d903ee','Short films and event films are being written up and will appear here one at a time.'],['anim','More animation on the way','#03eed8','More animation is being written up and will appear here one at a time.'],['sys','Identities and systems on the way','#038eee','Identities, motion kits and template systems are being written up and will appear here one at a time.']];
+const tiles=c=>`<span class="mt" aria-hidden="true" style="--c:${c}">${[0,1,2,3,4,5,6,7,8].map(i=>`<i style="--i:${i}"></i>`).join('')}</span>`;
 const CATS=[['all','All'],['film','Film'],['anim','Animation'],['sys','Identity and systems']];
 const ph=c=>`<svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="400" height="300" style="fill:var(--ph)"/><rect y="294" width="400" height="6" fill="${c}"/><g transform="translate(174 104) scale(.2)"><g style="color:var(--ph2)">${DP.markSVG('currentColor','',w*1.2)}</g></g></svg>`;
 const im=x=>x.img?`<img src="${x.img}" alt="" loading="lazy">${x.loop?`<video class="cl" muted loop playsinline preload="none" aria-hidden="true" data-l="${x.loop}"></video>`:''}`:ph(x.art);
 $('filters').innerHTML=CATS.map((c,i)=>`<button class="chip" type="button" data-c="${c[0]}" aria-pressed="${!i}">${c[1]}</button>`).join('');
-$('workGrid').innerHTML=WORK.map((x,i)=>`<${x.url?`a href="${x.url}"`:'button'} class="case rv" data-i="${i}" data-c="${x.c}"><div class="qt"><div class="cub"><div class="face a">${im(x)}${x.img?'':'<span class="soon">Image coming soon</span>'}</div><div class="face b"><span class="mono">${x.m}</span><p>${x.txt}</p><span style="font-weight:600">${x.url?'Watch the film →':'View project →'}</span></div></div></div><div><h3>${x.t}</h3><p class="meta">${x.m}</p></div></${x.url?'a':'button'}>`).join('');
+$('workGrid').innerHTML=WORK.map((x,i)=>`<${x.url?`a href="${x.url}"`:'button'} class="case rv" data-i="${i}" data-c="${x.c}"><div class="qt"><div class="cub"><div class="face a">${im(x)}${x.img?'':'<span class="soon">Image coming soon</span>'}</div><div class="face b"><span class="mono">${x.m}</span><p>${x.txt}</p><span style="font-weight:600">${x.url?'Watch the film →':'View project →'}</span></div></div></div><div><h3>${x.t}</h3><p class="meta">${x.m}</p></div></${x.url?'a':'button'}>`).join('')+MORE.map(m=>`<a href="#updates" class="case more rv" data-more="${m[0]}"${m[0]==='all'?'':' hidden'}><div class="qt"><div class="cub"><div class="face a">${tiles(m[2])}</div><div class="face b"><span class="mono">Coming up</span><p>${m[3]}</p><span style="font-weight:600">Get an email when it’s up →</span></div></div></div><div><h3>${m[1]}</h3><p class="meta">Being written up, one piece at a time</p></div></a>`).join('');
 /* card loops: play only while visible; skipped with reduced motion or data saver */
 if(!reduce&&!(navigator.connection&&navigator.connection.saveData))document.querySelectorAll('.case video.cl').forEach(v=>{let on=false;new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){if(!on){on=true;v.innerHTML=`<source src="${v.dataset.l}.av1.mp4" type='video/mp4; codecs="av01.0.04M.08"'><source src="${v.dataset.l}.h264.mp4" type='video/mp4; codecs="avc1.64001E"'>`;v.load();v.addEventListener('playing',()=>v.classList.add('on'),{once:true})}v.play().catch(()=>{})}else v.pause()}),{threshold:.4}).observe(v)});
-$('filters').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;$('filters').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));document.querySelectorAll('.case').forEach(k=>k.classList.toggle('dim',b.dataset.c!=='all'&&k.dataset.c!==b.dataset.c))});
+$('filters').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const c=b.dataset.c;$('filters').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));document.querySelectorAll('.case').forEach(k=>{const show=k.dataset.more?k.dataset.more===c:(c==='all'||k.dataset.c===c);if(k.hidden===!show)return;k.hidden=!show;if(show&&!reduce)k.animate([{opacity:0,transform:'perspective(900px) rotateY(-40deg)'},{opacity:1,transform:'none'}],{duration:450,easing:'cubic-bezier(.16,1,.3,1)'})})});
 const dlg=$('dlg');
 $('workGrid').addEventListener('click',e=>{const b=e.target.closest('.case');if(!b||b.tagName==='A')return;const x=WORK[b.dataset.i];$('dIm').innerHTML=im(x);$('dMeta').textContent=x.m;$('dT').textContent=x.t;$('dTxt').textContent=x.txt;$('dDl').innerHTML=x.dl.map(d=>`<div><dt>${d[0]}</dt><dd>${d[1]}</dd></div>`).join('');dlg.showModal?dlg.showModal():dlg.setAttribute('open','')});
 $('dX').onclick=()=>dlg.close();dlg.addEventListener('click',e=>{if(e.target===dlg)dlg.close()});
