@@ -8,7 +8,7 @@ export const ADMIN_HTML = String.raw`<!doctype html>
 <meta name="robots" content="noindex,nofollow">
 <title>Newsletter — DesignPraise</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<script>try{var t=localStorage.getItem("dp-theme");document.documentElement.dataset.theme=t==="light"?"light":"dark"}catch(e){}</script>
+<script>try{var t=localStorage.getItem("dp-theme");document.documentElement.dataset.theme=t==="light"?"light":"dark";localStorage.setItem("dp-preview","1")/* owner: lets this browser past the home-page splash */}catch(e){}</script>
 <style>
 @font-face{font-family:"DesignPraise Sans";src:url(/fonts/DesignPraiseSans.woff2) format("woff2");font-weight:100 900;font-display:swap}
 @font-face{font-family:"Google Sans Code";src:url(/fonts/GoogleSansCode.woff2) format("woff2");font-weight:300 800;font-display:swap}

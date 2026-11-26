@@ -85,3 +85,7 @@ dialog.view button{position:fixed;top:16px;right:16px;width:44px;height:44px;bor
 @media (prefers-reduced-motion:reduce){.film .loop{display:none}}
 .top nav a,.brand span{white-space:nowrap}
 @media(max-width:480px){.top nav a[href="/#contact"]{display:none}.play small{display:none}}
+
+/* small screens: keep the header on one line (the work pages carry three nav links) */
+.top nav a{white-space:nowrap}
+@media (max-width:520px){.brand span{display:none}.top nav{gap:2px}.top nav a{padding:8px 8px}}

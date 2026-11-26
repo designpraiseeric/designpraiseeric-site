@@ -82,11 +82,12 @@ footer{font:12px var(--mono);color:var(--mute)}
 
     <div>
       <h1 class="rise d1">The site is almost ready.</h1>
-      <p class="lead rise d2">My work, my process, and the After Effects tools you came here from will all live on this site. Until it opens, you can find the tools and recent work here:</p>
+      <p class="lead rise d2">My work, my process, and the After Effects tools you came here from will all live on this site. Until it opens, you can find my work and the tools here:</p>
     </div>
 
     <div class="links rise d3">
-      <a class="btn solid" href="/tools/">After Effects tools</a>
+      <a class="btn solid" href="/work/">See my work</a>
+      <a class="btn line" href="/tools/">After Effects tools</a>
       <a class="btn line" href="https://instagram.com/designpraiseeric" rel="noopener">Instagram</a>
     </div>
 
@@ -104,6 +105,7 @@ document.getElementById("theme").onclick=function(){var r=document.documentEleme
 // When the cube turns its coloured faces forward, the mark switches ink so it stays readable.
 (function(){var c=document.getElementById("cube"),t0=performance.now()+2600;function tick(now){var p=((now-t0)/9000)%1;c.classList.toggle("flip",now>t0&&p>.24&&p<.64);requestAnimationFrame(tick)}requestAnimationFrame(tick)})();
 </script>
+<script src="/js/dp-gate.js" defer></script>
 <script src="/js/seasons.js" defer></script>
 <script src="/js/seasons-art.js" defer></script>
 <script src="/js/dp-extras.js" defer></script>
