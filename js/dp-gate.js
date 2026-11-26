@@ -10,7 +10,7 @@
  * Launch day: set OPEN to true (or remove this script and the dp-gated line in index.html's <head>).
  */
 (function () {
-  var OPEN = false;
+  var OPEN = true; /* main site opened 27 Nov 2026 */
   var KEY = "dp-preview";
   var d = document, root = d.documentElement;
 
