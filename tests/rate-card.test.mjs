@@ -158,3 +158,62 @@ test('server check: matching, edited and old pages', () => {
   const junk = serverCheck({ state: { cat: 'motion', ans: { motion: { length: 'lots' } }, plan: 'x', about: [1] }, mid_ngn: 5 }, '');
   assert.equal(junk.done, true);
 });
+
+/* ---------- quantities (PR #11) ---------- */
+const qtyOptions = () => {
+  const out = [];
+  R.categories.forEach((c) => { const E = EN.make(R, state(c.id)); E.allQ(c).forEach((q) => { if (q.type === 'multi') q.options.forEach((o) => { if (o.qty) out.push({ c, q, o }); }); }); });
+  return out;
+};
+
+test('every countable line: the default quantity prices like the old single line, and more never costs less', () => {
+  const list = qtyOptions();
+  assert.ok(list.length >= 7, 'countable lines: ' + list.length);
+  list.forEach(({ c, q, o }) => {
+    let last = -1;
+    for (let n = 1; n <= o.qty.max; n++) {
+      const S = state(c.id, { [q.id]: [o.id], qty: { [q.id + '.' + o.id]: n } });
+      if (q.id === 'formats') S.ans[c.id][q.id] = ['master', o.id];
+      const tot = run(S).total;
+      assert.ok(tot >= last - 1e-6, c.id + ' ' + o.id + ' at ' + n);
+      last = tot;
+    }
+    const first = (o.qty.steps || R.qtySteps)[0].from;
+    assert.ok(first > o.qty.def, o.id + ': discount starts above the default quantity');
+  });
+});
+
+test('quantity discounts show on the line and follow the table', () => {
+  const S = state('edit', { extras: ['thumb'], qty: { 'extras.thumb': 10 } });
+  const E = run(S), row = E.rows.find((r) => /Thumbnails/.test(r.label));
+  assert.match(row.label, /× 10 \(20% off each\)/);
+  assert.ok(Math.abs(row.v - 21000 * 10 * 0.8) < 1);
+  const lang = run(state('motion', { formats: ['master', 'lang'], qty: { 'formats.lang': 3 } })).rows.find((r) => /Language/.test(r.label));
+  assert.match(lang.label, /× 3 \(10% off each\)/);
+});
+
+test('tampered quantities are clamped', () => {
+  const E = run(state('identity', { apps: ['social'], qty: { 'apps.social': 5000 } }));
+  const max = run(state('identity', { apps: ['social'], qty: { 'apps.social': 40 } }));
+  assert.equal(E.total, max.total);
+  const neg = run(state('identity', { apps: ['social'], qty: { 'apps.social': -3 } }));
+  const one = run(state('identity', { apps: ['social'], qty: { 'apps.social': 1 } }));
+  assert.equal(neg.total, one.total);
+});
+
+test('quantity savings count toward the 40% cap', () => {
+  const nonprofit = { org: 'ngo', size: 's1', revenue: 'r0', funding: 'grant' };
+  const ans = { variant: 'logo', apps: ['social', 'sign'], qty: { 'apps.social': 40, 'apps.sign': 20 } };
+  const list = run(Object.assign(state('identity', ans), { about: {} }));
+  const deep = run(Object.assign(state('identity', ans), { about: nonprofit, plan: { count: 1, retainer: 'm12', pay: 'full', series: 'no' } }));
+  const listPrice = list.total + list.qtySave;
+  assert.ok(deep.total >= 0.6 * listPrice - 1, (deep.total / listPrice).toFixed(3));
+});
+
+test('no discount table has a step where one more unit costs less (so the % shown is the table’s)', () => {
+  const tables = [R.qtySteps].concat(qtyOptions().map(({ o }) => o.qty.steps).filter(Boolean));
+  tables.forEach((t) => {
+    let prev = 0;
+    t.forEach((st) => { assert.ok((st.from - 1) * (1 - prev) <= st.from * (1 - st.off) + 1e-9, JSON.stringify(t)); prev = st.off; });
+  });
+});
