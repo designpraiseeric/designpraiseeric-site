@@ -26,6 +26,7 @@
   var EN = window.RCEngine.make(R, S);
   var market = EN.market, cat = EN.cat, optsOf = EN.optsOf, prodQ = EN.prodQ, allQ = EN.allQ, visible = EN.visible,
     logistics = EN.logistics, defaultOf = EN.defaultOf, val = EN.val, setVal = EN.setVal, tierInfo = EN.tierInfo, compute = EN.compute;
+  var qtyOpts = function (q) { return q.type === 'multi' ? optsOf(q).filter(function (o) { return o.qty; }) : []; };
   var FX = { live: {}, at: null, source: '' };
   function fxFor(id) {
     var c = R.currencies[id], ref = c.fx, L = FX.live[id], r = R.fxRules || {};
@@ -77,7 +78,22 @@
     if (q.type === 'range') return rangeBlock(key, q, v);
     if (q.type === 'assets') return assetsBlock(key, q, v);
     var note = q.notes && q.notes[v] ? '<p class="qnote">' + esc(q.notes[v]) + '</p>' : '';
-    return qBlock(key, q, chipGroup(key, q, v, q.type === 'multi') + note);
+    return qBlock(key, q, chipGroup(key, q, v, q.type === 'multi') + note + qtyHTML(c, q, v));
+  }
+  /* "How many?" steppers under a multi question, one per chosen countable option */
+  function qtyText(o, n) {
+    var off = EN.qtyOff(o, n), nxt = (o.qty.steps || R.qtySteps).find(function (s) { return s.from > n; });
+    return (off ? Math.round(off * 100) + '% off each' : '') + (nxt && n < o.qty.max ? (off ? ' · ' : '') + Math.round(nxt.off * 100) + '% off from ' + nxt.from : '');
+  }
+  function qtyHTML(c, q, v) {
+    var rows = qtyOpts(q).filter(function (o) { return v.indexOf(o.id) > -1; });
+    if (!rows.length) return '';
+    return '<div class="qtys">' + rows.map(function (o) {
+      var n = EN.qtyOf(c, q, o), k = q.id + '.' + o.id;
+      return '<div class="qrow"><span><b>' + esc(o.line || o.label) + '</b><small id="qx-' + k.replace(/\W/g, '-') + '">' + esc(qtyText(o, n)) + '</small></span><span class="qstep" role="group" aria-label="How many ' + esc(o.qty.unit || '') + '">' +
+        '<button type="button" data-qk="' + k + '" data-qd="-1" aria-label="Fewer"' + (n <= 1 ? ' disabled' : '') + '>−</button><output id="qn-' + k.replace(/\W/g, '-') + '">' + n + '</output>' +
+        '<button type="button" data-qk="' + k + '" data-qd="1" aria-label="More"' + (n >= o.qty.max ? ' disabled' : '') + '>+</button><small>' + esc(o.qty.unit || '') + '</small></span></div>';
+    }).join('') + '</div>';
   }
   function navHTML(i) {
     return '<div class="nav">' + (i > 0 ? '<button type="button" class="btn line" data-go="' + (i - 1) + '">Back</button>' : '<span></span>') +
@@ -168,6 +184,7 @@
     $('prog').innerHTML = HC.map(function (c, i) { return '<i style="--c:' + c + '" class="' + (i < lit ? 'f' : '') + '"></i>'; }).join('');
     var cur = $('steps').querySelector('[aria-current]'); if (cur && cur.scrollIntoView) cur.scrollIntoView({ block: 'nearest', inline: 'center', behavior: reduce ? 'auto' : 'smooth' });
   }
+  $('steps').addEventListener('click', function (e) { var go = e.target.closest('[data-go]'); if (go && !go.disabled) showStep(+go.dataset.go); });
   function validate(i) {
     if (i === 0) { if (!S.market) return 'Please choose where your business is based.'; if (!S.about.org) return 'Please choose what best describes you.'; }
     if (i === 1 && !S.cat) return 'Please pick one project type.';
@@ -208,6 +225,16 @@
       setTimeout(function () { if (S.step === 1) showStep(2); }, reduce ? 0 : 420);
       return;
     }
+    var qb = e.target.closest('button[data-qk]');
+    if (qb) {
+      var cq = cat(), parts = qb.dataset.qk.split('.'), qq = allQ(cq).find(function (x) { return x.id === parts[0]; }), qo = qq && optsOf(qq).find(function (o) { return o.id === parts[1]; });
+      if (!qo) return;
+      var nn = Math.min(qo.qty.max, Math.max(1, EN.qtyOf(cq, qq, qo) + (+qb.dataset.qd))), id = qb.dataset.qk.replace(/\W/g, '-');
+      EN.setQty(cq, qq, qo, nn);
+      $('qn-' + id).textContent = nn; $('qx-' + id).textContent = qtyText(qo, nn);
+      qb.parentElement.querySelectorAll('button').forEach(function (x) { x.disabled = +x.dataset.qd < 0 ? nn <= 1 : nn >= qo.qty.max; });
+      changed(); return;
+    }
     var b = e.target.closest('button[data-k]'); if (!b || b.hasAttribute('data-lock')) return;
     var k = b.dataset.k, v = b.dataset.v;
     if (k === 'mkt') {
@@ -224,6 +251,7 @@
       else if (q.type === 'multi') { pressGroup(b, true); var arr = val(c, q).slice(), ix = arr.indexOf(v); if (ix > -1) arr.splice(ix, 1); else arr.push(v); setVal(c, q, arr); }
       else { pressGroup(b); setVal(c, q, v); }
       if (q.notes || allQ(c).some(function (x) { var r = x.show || x.hideIf; return r && r.q === q.id; })) { var y = scrollY; rerender(2); scrollTo(0, y); }
+      if (qtyOpts(q).some(function (o) { return o.id === v; })) { var y2 = scrollY; rerender(logistics(c).indexOf(q) > -1 ? 3 : 2); scrollTo(0, y2); }
       changed();
     }
   });
@@ -324,7 +352,7 @@
   function labelOf(q, v) {
     if (q.type === 'range') return unitTxt(q, v);
     if (q.type === 'assets') return q.items.map(function (it) { var s = v[it.id] || 'have'; return it.label + ': ' + (s === 'have' ? 'have it' : s === 'need' ? 'needs it' : 'not needed'); }).join('; ');
-    var o = optsOf(q); if (q.type === 'multi') return v.map(function (id) { var x = o.find(function (y) { return y.id === id; }); return x ? x.label : id; }).join(', ') || 'None';
+    var o = optsOf(q); if (q.type === 'multi') return v.map(function (id) { var x = o.find(function (y) { return y.id === id; }); return x ? x.label + (x.qty ? ' × ' + EN.qtyOf(cat(), q, x) : '') : id; }).join(', ') || 'None';
     var x = o.find(function (y) { return y.id === v; }); return x ? x.label : '';
   }
   function selections() {

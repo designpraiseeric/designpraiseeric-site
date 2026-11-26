@@ -68,6 +68,17 @@
       }
       return ids.indexOf(v) > -1 ? v : defaultOf(q);
     }
+    /* Quantities for countable options live in ans[cat].qty['question.option']. */
+    function qtyOf(c, q, o) {
+      if (!o.qty) return 1;
+      var store = (S.ans && S.ans[c.id] && S.ans[c.id].qty) || {}, n = Math.round(+store[q.id + '.' + o.id]);
+      if (!isFinite(n) || store[q.id + '.' + o.id] == null) n = o.qty.def || 1;
+      return Math.min(o.qty.max || 99, Math.max(1, n));
+    }
+    function setQty(c, q, o, n) { S.ans = S.ans || {}; var a = (S.ans[c.id] = S.ans[c.id] || {}); a.qty = a.qty || {}; a.qty[q.id + '.' + o.id] = n; }
+    function qtyOff(o, n) { var d = 0; (o.qty.steps || R.qtySteps || []).forEach(function (s) { if (n >= s.from) d = s.off; }); return d; }
+    /* Units actually charged: n × (1 − discount), never fewer than for a smaller quantity. */
+    function qtyUnits(o, n) { var best = 0; for (var i = 1; i <= n; i++) best = Math.max(best, i * (1 - qtyOff(o, i))); return best; }
     function setVal(c, q, v) { S.ans = S.ans || {}; (S.ans[c.id] = S.ans[c.id] || {})[q.id] = v; }
     var sum = function (a) { return a.reduce(function (s, x) { return s + x.v; }, 0); };
     var pick = function (list, id) { return list.find(function (o) { return o.id === id; }) || list.find(function (o) { return o.def; }) || list[0]; };
@@ -183,12 +194,20 @@
       chosen.forEach(function (x) { var o = x.o; if (o.b) base += o.b; if (o.m) mult *= o.m; if (o.needScale) needScale *= o.needScale; if (o.u) { u += o.u; unsure++; } });
       var production = base * scale * mult, floored = false;
       if (production < (c.min || 0)) { production = c.min; floored = true; }
+      var qtySave = 0, qtyLines = [];
       chosen.forEach(function (x) {
         var asset = x.q.type === 'assets' || x.o.aiScale, ns = asset ? needScale : 1;
         var o = x.o, label = (o.line || o.label) + (asset && ns < 1 ? ' with AI' : ''), k = (o.perMin ? perMin : 1) * (o.perDay ? perDay : 1) * (o.perChar ? Math.max(1, chars) : 1) * ns;
-        if (o.p) lines.push({ label: label, v: production * o.p * ns });
-        if (o.a) lines.push({ label: label, v: o.a * k });
-        if (o.pass) pass.push({ label: label, v: o.pass * k });
+        var qn = o.qty ? qtyOf(c, x.q, o) : 1, units = o.qty ? qtyUnits(o, qn) : 1;
+        if (o.qty) {
+          var off = 1 - units / qn;
+          label += ' × ' + qn + (off > 0.0005 ? ' (' + Math.round(off * 100) + '% off each)' : '');
+          qtySave += ((o.p ? production * o.p * ns : 0) + (o.a ? o.a * k : 0)) * (qn - units);
+          qtyLines.push({ id: x.q.id + '.' + o.id, n: qn, units: units, off: off });
+        }
+        if (o.p) lines.push({ label: label, v: production * o.p * ns * units });
+        if (o.a) lines.push({ label: label, v: o.a * k * units });
+        if (o.pass) pass.push({ label: label, v: o.pass * k * units });
       });
       var merge = function (arr) { var mm = {}, out = []; arr.forEach(function (l) { if (mm[l.label]) mm[l.label].v += l.v; else { mm[l.label] = { label: l.label, v: l.v }; out.push(mm[l.label]); } }); return out; };
       lines = merge(lines); pass = merge(pass);
@@ -201,12 +220,14 @@
       var disc = Math.max(vd, ret.off || 0), discFrom = (ret.off || 0) > vd ? 'retainer' : 'volume';
       var payOff = (R.payPref.options.find(function (o) { return o.id === plan.pay; }) || {}).off || 0;
       /* Savings floor: tier discount × volume or retainer saving × upfront saving never take the studio fee below this share. */
-      var tmD = Math.min(1, tm), Fl = CK.savingsFloor || 0, capped = false;
+      var tmD = Math.min(1, tm), capped = false, work0 = production + sum(lines);
+      /* quantity discounts count toward the same cap: the floor is raised by the share they already took */
+      var Fl = CK.savingsFloor ? Math.min(1, CK.savingsFloor * (work0 + qtySave) / work0) : 0;
       if (Fl && tmD * (1 - disc) * (1 - payOff) < Fl - 1e-9) {
         capped = true;
         if (tmD * (1 - disc) < Fl) { payOff = 0; disc = Math.max(0, 1 - Fl / tmD); }
         else payOff = 1 - Fl / (tmD * (1 - disc));
-        checks.push({ id: 'savings-cap', level: 'adjusted', msg: 'Savings are capped at ' + Math.round((1 - Fl) * 100) + '% in total, so the combined tier, ' + discFrom + ' and upfront savings have been trimmed to fit.' });
+        checks.push({ id: 'savings-cap', level: 'adjusted', msg: 'Savings are capped at ' + Math.round((1 - CK.savingsFloor) * 100) + '% in total, so the combined tier, ' + discFrom + ', quantity and upfront savings have been trimmed to fit.' });
       }
       var work1 = production + sum(lines), pass1 = sum(pass);
       /* Tier premiums are folded into each line; tier discounts are shown as their own line. */
@@ -256,10 +277,10 @@
       if (checks.some(function (x) { return x.level === 'call' && x.id !== 'emergency-size'; })) timeline = 'Planned on the call';
       var status = checks.some(function (x) { return x.level === 'call'; }) ? 'call' : checks.some(function (x) { return x.level === 'adjusted' || x.level === 'tight'; }) ? 'adjusted' : 'ready';
       return { c: c, m: m, T: T, rows: rows, total: total, setup: setup, chars: chars, lo: lo, hi: hi, plan: pplan, timeline: timeline, ret: ret, n: n, unsure: unsure, floored: floored, production: production,
-        checks: checks, status: status, effective: eff, effort: effort, capped: capped };
+        checks: checks, status: status, effective: eff, effort: effort, capped: capped, qty: qtyLines, qtySave: qtySave };
     }
 
-    return { market: market, cat: cat, optsOf: optsOf, prodQ: prodQ, logistics: logistics, allQ: allQ, visible: visible, defaultOf: defaultOf, val: val, setVal: setVal, tierInfo: tierInfo, compute: compute };
+    return { market: market, cat: cat, optsOf: optsOf, prodQ: prodQ, logistics: logistics, allQ: allQ, visible: visible, defaultOf: defaultOf, val: val, setVal: setVal, qtyOf: qtyOf, setQty: setQty, qtyOff: qtyOff, tierInfo: tierInfo, compute: compute };
   }
 
   /* The answers the server needs to price an estimate again, and nothing else. */

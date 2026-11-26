@@ -27,6 +27,9 @@
      cats:[…]     the option only appears for these categories
      perChar      scale a/pass by the number of characters
      aiScale      the AI options' needScale applies to this line too (e.g. generated voices)
+     qty:{def,max,unit,steps?}  the client sets how many; p/a/pass are PER UNIT, and the line gets the
+                  quantity discount from `steps` (or the shared `qtySteps`). def is the quantity the old single
+                  price covered, so the default never changes; steps start above it. A higher quantity never costs less.
    QUESTION FIELDS: show:{q,in,cats?} hides a question unless another has one of these answers; hideIf:{q,in} hides it when it does
      (film's shoot questions disappear for AI-led work); notes:{optionId:'text'} explains a choice
    RANGE QUESTIONS
@@ -38,13 +41,19 @@
      The server (/api/estimate) prices every emailed estimate again from the raw answers, so an edited page can't change a figure.
    ===================================================================== */
 (typeof window !== 'undefined' ? window : globalThis).RATES = {
-  version: '2026-11-26d',
+  version: '2026-11-26e',
   owner: { name: 'Divinepraise Eric', studio: 'DesignPraise Studio', email: 'divinepraiseeric@gmail.com', wa: '2348135726234' },
 
   /* Range band around the computed figure. ANCHOR: a standard-tier motion video, motion only,
      all assets supplied, comes out at ₦120,000 at 90 s (low end) and ₦350,000 at 180 s (high end).
      That's motion's base (215,000 at 135 s) with this band. Every other category was set relative to it. */
   band: { lo: 0.79, hi: 1.275, perUnsure: 0.04 },
+
+  /* ---------- quantity discounts for countable lines (thumbnails, language versions, templates…) ----------
+     From this many units, every unit on that line is this much cheaper. Lines can set their own `steps`.
+     Keep each step small enough that one more unit never lowers the line: (from − 1) × (1 − previous off) ≤ from × (1 − off).
+     The engine enforces this anyway, but then the "% off" shown is the true effective figure, not the table's. */
+  qtySteps: [{ from: 3, off: 0.1 }, { from: 6, off: 0.15 }, { from: 10, off: 0.2 }],
 
   /* One working day of studio time at standard tier (used for timeline estimates). */
   dayRate: 36000,
@@ -187,10 +196,10 @@
       { id: 'master', label: 'Master in one aspect ratio', def: true, lock: true },
       { id: 'vert', label: 'Vertical 9:16', p: 0.12, line: 'Vertical version' },
       { id: 'sq', label: 'Square 1:1 or 4:5', p: 0.1, line: 'Square version' },
-      { id: 'cut', label: 'Cutdowns (6 s, 15 s, 30 s)', p: 0.15, line: 'Cutdowns' },
+      { id: 'cut', label: 'Cutdowns (shorter edits, e.g. 6 s, 15 s, 30 s)', p: 0.05, line: 'Cutdowns', qty: { def: 3, max: 12, unit: 'cutdowns', steps: [{ from: 5, off: 0.1 }, { from: 8, off: 0.2 }] } },
       { id: 'subs', label: 'Plain captions or subtitles', a: 20000, perMin: true, line: 'Captions' },
       { id: 'kcap', label: 'Styled animated captions (word by word)', p: 0.12, a: 10000, line: 'Animated captions' },
-      { id: 'lang', label: 'Another language version', p: 0.15, line: 'Language version' },
+      { id: 'lang', label: 'Other language versions', p: 0.15, line: 'Language versions', qty: { def: 1, max: 10, unit: 'languages' } },
       { id: 'alpha', label: 'ProRes or transparent files', a: 15000, line: 'Mastering files' },
       { id: 'proj', label: 'Editable project files', p: 0.15, line: 'Project files' }
     ] }
@@ -463,7 +472,7 @@
         { id: 'extras', type: 'multi', label: 'Also needed', options: [
           { id: 'story', label: 'Find the story (no script)', m: 1.2 }, { id: 'multicam', label: 'Multicam sync', m: 1.15 },
           { id: 'grade', label: 'Colour grade', p: 0.2, line: 'Colour grade' }, { id: 'audio', label: 'Audio clean-up and mix', p: 0.15, line: 'Audio mix' },
-          { id: 'titles', label: 'Motion titles and lower thirds', p: 0.15, line: 'Motion titles' }, { id: 'thumb', label: 'Thumbnail', a: 21000, line: 'Thumbnail' }
+          { id: 'titles', label: 'Motion titles and lower thirds', p: 0.15, line: 'Motion titles' }, { id: 'thumb', label: 'Thumbnails', a: 21000, line: 'Thumbnails', qty: { def: 1, max: 30, unit: 'thumbnails', steps: [{ from: 5, off: 0.15 }, { from: 10, off: 0.2 }] } }
         ] },
         { id: 'assets', type: 'assets', label: 'What do you already have?', items: [
           { id: 'music', label: 'Music', need: { pass: 20000, line: 'Licensed music' } },
@@ -520,9 +529,9 @@
           { id: 'full', label: 'Comprehensive brand book', p: 0.35, line: 'Brand book' }
         ] },
         { id: 'apps', type: 'multi', label: 'Applications', options: [
-          { id: 'stat', label: 'Business cards and stationery', a: 55000, line: 'Stationery' }, { id: 'social', label: 'Social templates', a: 85000, line: 'Social templates' },
-          { id: 'deck', label: 'Presentation template', a: 130000, line: 'Presentation template' }, { id: 'sign', label: 'Signage and merch', a: 70000, line: 'Signage and merch' },
-          { id: 'pack', label: 'Packaging', a: 170000, line: 'Packaging' }, { id: 'web', label: 'Website style', a: 170000, line: 'Website style' },
+          { id: 'stat', label: 'Business cards and stationery', a: 55000 / 3, line: 'Stationery', qty: { def: 3, max: 10, unit: 'items', steps: [{ from: 6, off: 0.1 }] } }, { id: 'social', label: 'Social templates', a: 17000, line: 'Social templates', qty: { def: 5, max: 40, unit: 'templates', steps: [{ from: 8, off: 0.1 }, { from: 16, off: 0.15 }] } },
+          { id: 'deck', label: 'Presentation template', a: 130000, line: 'Presentation template' }, { id: 'sign', label: 'Signage and merch', a: 35000, line: 'Signage and merch', qty: { def: 2, max: 20, unit: 'items', steps: [{ from: 5, off: 0.1 }, { from: 10, off: 0.15 }] } },
+          { id: 'pack', label: 'Packaging', a: 170000, line: 'Packaging', qty: { def: 1, max: 12, unit: 'designs' } }, { id: 'web', label: 'Website style', a: 170000, line: 'Website style' },
           { id: 'name', label: 'Naming', a: 215000, line: 'Naming' }
         ] },
         { id: 'assets', type: 'assets', label: 'What do you already have?', items: [
