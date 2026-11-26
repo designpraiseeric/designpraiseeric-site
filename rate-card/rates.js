@@ -26,6 +26,7 @@
      needScale    multiplies every "Need it" asset line (used by the AI options)
      cats:[…]     the option only appears for these categories
      perChar      scale a/pass by the number of characters
+     perQ:'id'    scale a/pass by the value of that range question (e.g. actors × days)
      aiScale      the AI options' needScale applies to this line too (e.g. generated voices)
      qty:{def,max,unit,steps?}  the client sets how many; p/a/pass are PER UNIT, and the line gets the
                   quantity discount from `steps` (or the shared `qtySteps`). def is the quantity the old single
@@ -41,7 +42,7 @@
      The server (/api/estimate) prices every emailed estimate again from the raw answers, so an edited page can't change a figure.
    ===================================================================== */
 (typeof window !== 'undefined' ? window : globalThis).RATES = {
-  version: '2026-11-26e',
+  version: '2026-11-26f',
   owner: { name: 'Divinepraise Eric', studio: 'DesignPraise Studio', email: 'divinepraiseeric@gmail.com', wa: '2348135726234' },
 
   /* Range band around the computed figure. ANCHOR: a standard-tier motion video, motion only,
@@ -65,7 +66,10 @@
          Fewer days than "fastest" are priced at that minimum; between the two, a tight-schedule line is added. */
       pace: { brand: [4, 2], ad: [2, 1], mv: [5, 3], doc: [8, 4], short: [8, 4], testi: [20, 10], event: [60, 30], church: [60, 30] },
       /* Answers that slow a shoot down (pace × factor). */
-      slow: { loc: { l2: 0.85, l4: 0.7 }, cast: { many: 0.85, call: 0.85 }, crew: { solo: 0.85, large: 0.85 }, blend: { vfx: 0.85 } },
+      slow: { crew: { solo: 0.85, large: 0.85 }, blend: { vfx: 0.85 } },
+      /* Counts that slow a shoot: pace ÷ (1 + k × (count − 1)). 4 locations ≈ ×0.74, 7 actors ≈ ×0.85. */
+      slowPer: { locs: 0.12, actors: 0.03 },
+      locsPerDay: [3, 2], // locations a shoot day can cover: [fastest, comfortable]; shoot days are raised to fit
       tight: { p: 0.25, line: 'Tight shoot schedule (long days, extra hands)' }, // at the minimum; shrinks to 0 at the comfortable number of days
       longForm: 1800,   // seconds: longer work goes to a call…
       feature: 3600,    // …with a feature-film message from this length
@@ -387,6 +391,13 @@
           { id: 'motion', label: '2D motion graphics', m: 1.1 }, { id: 'footage', label: 'Live-action footage (CG integration)', m: 1.35 }
         ] },
         { id: 'length', type: 'range', label: 'Length', unit: 's', min: 5, max: 300, step: 5, def: 30, scale: { ref: 30, exp: 0.8 } },
+        { id: 'products', type: 'range', hideIf: { q: 'variant', in: ['char', 'abstract'] }, label: 'Products, objects or sets', hint: 'Each one is modelled (or prepared from your files), lit and shot.', unit: '', min: 1, max: 20, step: 1, def: 1, scale: { ref: 1, exp: 0.55 } },
+        { id: 'shots', type: 'range', label: 'Separate shots (camera set-ups)', hint: 'A turntable is one shot; a launch film is usually 6–12.', unit: 'shots', min: 1, max: 60, step: 1, def: 6, scale: { ref: 6, exp: 0.25 } },
+        { id: 'chars', type: 'range', show: { q: 'variant', in: ['char'] }, label: 'Characters', hint: 'Count everyone who appears, including small parts.', unit: '', min: 1, max: 8, step: 1, def: 1, scale: { ref: 1, exp: 0.35 } },
+        { id: 'dialogue', type: 'single', show: { q: 'variant', in: ['char'] }, label: 'Do the characters speak?', options: [
+          { id: 'none', label: 'No, music or narration only', def: true },
+          { id: 'lines', label: 'Yes, with lip-sync', m: 1.3, pass: 15000, perChar: true, aiScale: true, line: 'Character voices' }
+        ] },
         { id: 'model', type: 'single', label: 'Models', options: [
           { id: 'have', label: 'You supply 3D models or CAD', def: true }, { id: 'simple', label: 'I model simple objects', p: 0.3, line: '3D modelling' },
           { id: 'complex', label: 'I model complex products or sets', p: 0.65, line: 'Detailed 3D modelling' }, { id: 'ns', label: 'Not sure', p: 0.3, u: 1, line: '3D modelling' }
@@ -433,12 +444,14 @@
           { id: 'high', label: 'High-end package (lenses, lighting, grip)', pass: 400000, perDay: true, line: 'High-end equipment rental' }
         ] },
         { id: 'cast', type: 'single', hideIf: { q: 'ai', in: ['led'] }, label: 'On-screen talent', options: [
-          { id: 'none', label: 'Real people or your team', def: true }, { id: 'few', label: '1–3 actors', pass: 120000, perDay: true, line: 'Actors' },
-          { id: 'many', label: '4–10 actors', pass: 350000, perDay: true, line: 'Cast' }, { id: 'call', label: 'Casting call needed', a: 115000, pass: 150000, perDay: true, line: 'Casting and cast' }
+          { id: 'none', label: 'Real people or your team', def: true },
+          { id: 'actors', label: 'Hired actors', pass: 50000, perDay: true, perQ: 'actors', line: 'Actors' },
+          { id: 'call', label: 'Hired actors, with a casting call', a: 115000, pass: 50000, perDay: true, perQ: 'actors', line: 'Casting and cast' }
         ] },
-        { id: 'loc', type: 'single', hideIf: { q: 'ai', in: ['led'] }, label: 'Locations', options: [
-          { id: 'l1', label: 'One location', def: true }, { id: 'l2', label: '2–3 locations', m: 1.15 }, { id: 'l4', label: '4 or more', m: 1.3 },
-          { id: 'studio', label: 'Studio rental', pass: 150000, perDay: true, line: 'Studio rental' }
+        { id: 'actors', type: 'range', show: { q: 'cast', in: ['actors', 'call'] }, label: 'How many actors?', hint: 'Everyone with a speaking or featured part. Extras in the background count too.', unit: '', min: 1, max: 30, step: 1, def: 2 },
+        { id: 'locs', type: 'range', hideIf: { q: 'ai', in: ['led'] }, label: 'Locations', hint: 'Every place the crew moves to, including a studio. About three a day is the most a shoot can cover.', unit: '', min: 1, max: 12, step: 1, def: 1, scale: { ref: 1, exp: 0.18 } },
+        { id: 'studio', type: 'single', hideIf: { q: 'ai', in: ['led'] }, label: 'Studio rental', options: [
+          { id: 'no', label: 'No studio', def: true }, { id: 'yes', label: 'Rent a studio', pass: 150000, perDay: true, line: 'Studio rental' }
         ] },
         { id: 'where', type: 'single', hideIf: { q: 'ai', in: ['led'] }, label: 'Where is the shoot?', options: [
           { id: 'lagos', label: 'Lagos', def: true }, { id: 'ng', label: 'Elsewhere in Nigeria', pass: 150000, line: 'Travel and lodging' },

@@ -35,7 +35,7 @@
       var rule = q.show || q.hideIf; if (!rule) return true;
       if (rule.cats && rule.cats.indexOf(c.id) < 0) return true;
       var w = qOf(c, rule.q), wv = w ? val(c, w) : null;
-      var hit = !!w && (Array.isArray(wv) ? wv.some(function (x) { return rule.in.indexOf(x) > -1; }) : rule.in.indexOf(wv) > -1);
+      var hit = !!w && visible(c, w) && (Array.isArray(wv) ? wv.some(function (x) { return rule.in.indexOf(x) > -1; }) : rule.in.indexOf(wv) > -1);
       return q.show ? hit : !hit;
     }
     function defaultOf(q) {
@@ -148,10 +148,17 @@
             var qq = qOf(c, qid); if (!qq || !visible(c, qq)) return;
             var vv = val(c, qq); (Array.isArray(vv) ? vv : [vv]).forEach(function (id) { if (F.slow[qid][id]) slow *= F.slow[qid][id]; });
           });
-          var mins = len / 60, step = dayQ.step;
-          var minDays = upStep(mins / (pace[0] * slow), step, dayQ.min), goodDays = Math.max(minDays, upStep(mins / (pace[1] * slow), step, dayQ.min));
+          Object.keys(F.slowPer || {}).forEach(function (qid) {
+            var qq = qOf(c, qid); if (!qq || !visible(c, qq)) return;
+            slow /= 1 + F.slowPer[qid] * (val(c, qq) - 1);
+          });
+          var mins = len / 60, step = dayQ.step, locQ = qOf(c, 'locs'), locs = locQ && visible(c, locQ) ? val(c, locQ) : 1;
+          var LPD = F.locsPerDay || [Infinity, Infinity];
+          var minDays = upStep(Math.max(mins / (pace[0] * slow), locs / LPD[0]), step, dayQ.min);
+          var goodDays = Math.max(minDays, upStep(Math.max(mins / (pace[1] * slow), locs / LPD[1]), step, dayQ.min));
+          var why = locs / LPD[0] > mins / (pace[0] * slow) ? ' to get round ' + locs + ' locations' : ', even at a fast pace';
           if (days < minDays) {
-            checks.push({ id: 'days-min', level: 'adjusted', msg: 'At ' + lenTxt(len) + ', a ' + vLabel + ' needs at least ' + dTxt(minDays) + ' of shooting, even at a fast pace, so the estimate uses ' + dTxt(minDays) + ' instead of ' + dTxt(days) + '. A comfortable schedule is about ' + dTxt(goodDays) + '.' });
+            checks.push({ id: 'days-min', level: 'adjusted', msg: 'At ' + lenTxt(len) + ', a ' + vLabel + ' needs at least ' + dTxt(minDays) + ' of shooting' + why + ', so the estimate uses ' + dTxt(minDays) + ' instead of ' + dTxt(days) + '. A comfortable schedule is about ' + dTxt(goodDays) + '.' });
             days = minDays;
           }
           eff.days = days;
@@ -197,7 +204,9 @@
       var qtySave = 0, qtyLines = [];
       chosen.forEach(function (x) {
         var asset = x.q.type === 'assets' || x.o.aiScale, ns = asset ? needScale : 1;
-        var o = x.o, label = (o.line || o.label) + (asset && ns < 1 ? ' with AI' : ''), k = (o.perMin ? perMin : 1) * (o.perDay ? perDay : 1) * (o.perChar ? Math.max(1, chars) : 1) * ns;
+        var pq = x.o.perQ ? qOf(c, x.o.perQ) : null;
+        var o = x.o, label = (o.line || o.label) + (asset && ns < 1 ? ' with AI' : ''), k = (o.perMin ? perMin : 1) * (o.perDay ? perDay : 1) * (o.perChar ? Math.max(1, chars) : 1) * (pq ? val(c, pq) : 1) * ns;
+        if (pq) label += ' × ' + val(c, pq);
         var qn = o.qty ? qtyOf(c, x.q, o) : 1, units = o.qty ? qtyUnits(o, qn) : 1;
         if (o.qty) {
           var off = 1 - units / qn;
