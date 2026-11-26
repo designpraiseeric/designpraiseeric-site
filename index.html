@@ -220,6 +220,33 @@ input[type=range]{width:100%;accent-color:var(--violet);height:30px}
 .vers{display:grid;gap:8px;font-size:14px}
 .vers div{display:grid;grid-template-columns:44px 1fr;gap:10px}
 .vers b{font:500 13px/1.6 var(--mono);color:var(--violet)}
+.dev{display:inline-block;vertical-align:1px;margin-left:4px;font:600 10.5px/1 var(--mono);letter-spacing:.02em;padding:4px 7px;border-radius:99px;color:var(--ink);background:color-mix(in srgb,var(--amber) 20%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--amber) 65%,transparent);white-space:nowrap}
+.devnote{font-size:14.5px;color:var(--mute);padding:10px 12px;border-radius:10px;background:color-mix(in srgb,var(--amber) 9%,transparent)}.devnote .dev{margin:0 6px 0 0}
+.aet{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.aet a{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:10px;text-decoration:none;color:var(--ink);font-size:14px;font-weight:550;box-shadow:inset 0 0 0 1px var(--line);transition:background .24s,box-shadow .24s,transform .3s var(--out)}
+.aet a:hover{background:var(--tint);box-shadow:inset 0 0 0 1px var(--violet);transform:translateY(-1px)}
+.aet img{width:22px;height:22px;border-radius:6px;flex:none}
+.tipp{position:absolute;left:0;top:0;z-index:60;width:30px;height:30px;pointer-events:none;opacity:0;transition:transform .75s var(--sig),opacity .3s}
+.tipp.on{opacity:1}
+.tipp svg{width:30px;height:30px;filter:drop-shadow(0 4px 10px rgba(0,0,0,.45));transition:transform .15s}
+.tipp.press svg{transform:scale(.82)}
+.tipp .rip{position:absolute;left:-14px;top:-14px;width:28px;height:28px;border-radius:50%;border:2px solid var(--amber);opacity:0}
+.tipp.press .rip{animation:rip .6s var(--out)}
+@keyframes rip{from{opacity:1;transform:scale(.3)}to{opacity:0;transform:scale(1.8)}}
+.tipb{position:absolute;left:0;top:0;z-index:61;width:min(300px,calc(100vw - 24px));padding:12px 14px 10px;border-radius:14px;background:#1a0d3e;color:#fff;box-shadow:0 18px 40px -16px rgba(0,0,0,.6),0 0 0 1px rgba(165,123,255,.35);font-size:14.5px;line-height:1.45;opacity:0;transform:perspective(600px) rotateX(-70deg);transform-origin:50% 0;transition:opacity .35s var(--sig),transform .35s var(--sig),left .6s var(--sig),top .6s var(--sig)}
+.tipb.on{opacity:1;transform:none}
+.tipb p{margin:0}
+.tipb .tf{display:flex;align-items:center;gap:10px;margin-top:8px;font:500 11.5px var(--mono);color:#b4a9dc}
+.tipb .tf span{margin-right:auto}
+.tipb button{all:unset;cursor:pointer;color:#fff;padding:3px 6px;border-radius:6px;text-decoration:underline;text-underline-offset:3px}
+.tipb button:hover{background:rgba(255,255,255,.1)}
+.tipb button:focus-visible{outline:2px solid #03eed8}
+.tipb::before{content:"";position:absolute;left:var(--ax,24px);width:10px;height:10px;background:#1a0d3e;transform:rotate(45deg)}
+.tipb.below::before{top:-5px}.tipb.above::before{bottom:-5px}
+.howto{all:unset;cursor:pointer;font:500 12.5px var(--mono);color:var(--mute);display:inline-flex;align-items:center;gap:6px;margin-top:12px;padding:4px 8px;border-radius:8px}
+.howto:hover{color:var(--ink);background:var(--tint)}
+.howto:focus-visible{outline:2px solid var(--violet)}
+.howto::before{content:"";width:7px;height:7px;border-radius:2px;background:var(--amber);transform:rotate(45deg)}
 .also{margin-top:40px;padding-top:22px;border-top:1px solid var(--line);font-size:16px;color:var(--mute)}
 /* about */
 .about{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:clamp(32px,6vw,96px);align-items:start}
@@ -337,10 +364,10 @@ footer a{color:var(--ink);text-decoration:none}footer a:hover{color:var(--violet
 </div></section>
 
 <section id="tools" class="paper" data-p="3"><div class="wrap">
-<div class="sec-head"><div><span class="lt"><h2>Tools</h2></span><p class="lead rv">Software I build alongside client work, for filmmakers and motion designers. Try them here.</p></div><a class="link" href="https://github.com/designpraiseeric" target="_blank" rel="noopener">GitHub</a></div>
+<div class="sec-head"><div><span class="lt"><h2>Tools</h2></span><p class="lead rv">Software I build alongside client work, for filmmakers and motion designers. Try them here.</p></div><div style="display:flex;gap:18px;flex-wrap:wrap"><a class="link" href="/tools/">All After Effects tools</a><a class="link" href="https://github.com/designpraiseeric" target="_blank" rel="noopener">GitHub</a></div></div>
 <div class="tools" id="toolTiles"></div>
 <div id="stages"></div>
-<p class="also">In development: DockDocs and Notaeble, After Effects panels for documents and notes, and a bridge that lets AI assistants work inside After Effects.</p>
+<p class="also">Also in development: a bridge that lets AI assistants work inside After Effects.</p>
 </div></section>
 
 <section id="about" data-p="4"><div class="wrap about">
@@ -403,7 +430,7 @@ footer a{color:var(--ink);text-decoration:none}footer a:hover{color:var(--violet
 <footer><div class="wrap">
 <div><a class="brand" href="#top"><svg viewBox="-24 -10 296 320" class="mk1" aria-hidden="true"></svg>designpraise</a><p class="mute" style="font-size:15px;margin-top:12px">Art direction, motion design and film. Lagos, Nigeria.</p></div>
 <div><h4>Studio</h4><ul><li><a href="#work">Work</a></li><li><a href="#services">Services</a></li><li><a href="#about">About</a></li><li><a href="#contact">Contact</a></li></ul></div>
-<div><h4>Tools</h4><ul><li><a href="#tools" data-tool="0">Colored Lens</a></li><li><a href="#tools" data-tool="1">Lukuluku</a></li><li><a href="#tools" data-tool="2">Colored Lens Studio</a></li><li><a href="#tools" data-tool="3">Aline</a></li></ul></div>
+<div><h4>Tools</h4><ul><li><a href="#tools" data-tool="0">Colored Lens</a></li><li><a href="#tools" data-tool="1">Lukuluku</a></li><li><a href="#tools" data-tool="2">Colored Lens Studio</a></li><li><a href="#tools" data-tool="3">After Effects tools</a></li><li><a href="/tools/">All tools</a></li></ul></div>
 <div><h4>Elsewhere</h4><ul><li><a href="https://www.instagram.com/designpraiseeric/">Instagram</a></li><li><a href="https://www.behance.net/divinepraiseeric">Behance</a></li><li><a href="https://github.com/designpraiseeric">GitHub</a></li><li><a href="https://designpraiseeric.gumroad.com/">Gumroad</a></li><li><a href="#updates">Newsletter</a></li></ul></div>
 </div>
 <div class="legal"><span>© <span id="yr">2026</span> DesignPraise Studio</span><span class="cube" id="fcube" aria-hidden="true"></span></div>
@@ -548,8 +575,8 @@ $('steps').innerHTML=[['Discovery','A short call about goals, audience, formats 
 
 /* ===== tools ===== */
 const ICON_AL=`<svg viewBox="0 0 44 44" aria-hidden="true"><rect width="44" height="44" rx="10" fill="#03ee63"/><path d="M8 30 L36 14" stroke="#1a0d3e" stroke-width="2.5" stroke-linecap="round"/><g fill="#1a0d3e"><rect x="9" y="27" width="5" height="5" rx="1"/><rect x="18.5" y="21.5" width="5" height="5" rx="1"/><rect x="28" y="16" width="5" height="5" rx="1"/></g></svg>`;
-const TOOLS=[['Colored Lens','<img src="img/icon-colored-lens.png" alt="">','Colour in film, explained','Free · Web and Android'],['Lukuluku','<img src="img/icon-lukuluku.png" alt="">','A film look lab','Free · Web and Android'],['Colored Lens Studio','<img src="img/icon-cls.svg" alt="" style="background:#1d1d22;padding:5px">','Grading help inside your editor','Free · Premiere and Resolve'],['Aline','\u0000','Points to a line in After Effects','Pay what you want · Gumroad']];
-$('toolTiles').innerHTML=TOOLS.map((t,i)=>`<div class="tool qt rv" data-t="${i}"><div class="cub"><button type="button" class="face a" aria-label="Try ${t[0]}"><span class="ti">${t[1]==='\u0000'?ICON_AL:t[1]}<span><b>${t[0]}</b><small>${t[2]}</small></span></span><small>${t[3]}</small></button><button type="button" class="face b" tabindex="-1" aria-hidden="true"><b>${t[0]}</b><span style="font-weight:600">Try it →</span></button></div></div>`).join('');
+const TOOLS=[['Colored Lens','<img src="img/icon-colored-lens.png" alt="">','Colour in film, explained','Free · Web and Android',0],['Lukuluku','<img src="img/icon-lukuluku.png" alt="">','A film look lab','Free · Web and Android',1],['Colored Lens Studio','<img src="img/icon-cls.svg" alt="" style="background:#1d1d22;padding:5px">','Grading help inside your editor','Free · Premiere and Resolve',1],['After Effects tools','<img src="/img/icons/baerista.svg" alt="">','Baerista and 14 scripts and panels','Free · name your price',0]];
+$('toolTiles').innerHTML=TOOLS.map((t,i)=>`<div class="tool qt rv" data-t="${i}"><div class="cub"><button type="button" class="face a" aria-label="Try ${t[0]}"><span class="ti">${t[1]==='\u0000'?ICON_AL:t[1]}<span><b>${t[0]}</b><small>${t[2]}</small></span></span><small>${t[3]}${t[4]?' <span class="dev">In development</span>':''}</small></button><button type="button" class="face b" tabindex="-1" aria-hidden="true"><b>${t[0]}</b><span style="font-weight:600">Try it →</span></button></div></div>`).join('');
 $('stages').innerHTML=`
 <div class="stage" id="st0" hidden>
 <div class="ctl"><div class="view" style="aspect-ratio:16/9"><img id="clImg" alt=""></div><div class="swatches" id="clSw" role="group" aria-label="Choose a hue"></div></div>
@@ -560,29 +587,28 @@ $('stages').innerHTML=`
 <div class="stage" id="st1" hidden>
 <div class="ctl"><div class="view" id="lkView" style="aspect-ratio:2.39/1"><img id="lkA" alt=""><img id="lkB" alt="" style="opacity:0"></div>
 <label class="k">Lighting</label><div class="row" id="lkL"></div><label class="k">Lens</label><div class="row" id="lkO"></div><label class="k">Colour</label><div class="row" id="lkC"></div><label class="k">Aspect ratio</label><div class="row" id="lkA2"></div></div>
-<div class="ptxt"><div><h3>Lukuluku</h3><p class="tag">A film look lab</p></div><p class="mono" id="lkCode" style="color:var(--violet)"></p><div><b id="lkName"></b><p class="mute" id="lkRec" style="margin-top:4px;font-size:15px"></p><p class="note" id="lkRef" style="margin-top:6px"></p></div>
+<div class="ptxt"><div><h3>Lukuluku</h3><p class="tag">A film look lab</p></div><p class="devnote"><span class="dev">In development</span>Early days: features, looks and layout are still changing, and some things may not work yet.</p><p class="mono" id="lkCode" style="color:var(--violet)"></p><div><b id="lkName"></b><p class="mute" id="lkRec" style="margin-top:4px;font-size:15px"></p><p class="note" id="lkRef" style="margin-top:6px"></p></div>
 <p class="mute" style="font-size:15px">Real Blender renders for each lighting and lens setup. The full app adds atmosphere, glass, 17 colour sciences, 11 film and video media, a full grade, LUT export and AI video prompts.</p>
-<div class="facts"><span>Platform <b>Web, Android</b></span><span>Price <b>Free</b></span></div>
+<div class="facts"><span>Platform <b>Web, Android</b></span><span>Price <b>Free</b></span><span>Status <b>In development</b></span></div>
 <div class="acts"><a class="btn mag" href="https://designpraiseeric.github.io/lukuluku/" target="_blank" rel="noopener">Open Lukuluku</a><a class="btn line" href="https://github.com/designpraiseeric/lukuluku/releases" target="_blank" rel="noopener">Android</a></div></div></div>
 <div class="stage" id="st2" hidden>
 <div class="ctl"><div class="view" id="clsView" style="aspect-ratio:16/9;cursor:crosshair"><img id="clsImg" alt="Frame being read"><img id="clsPrev" alt="" style="clip-path:inset(0 0 0 50%)"><div class="wipe" id="clsWipe" hidden><i style="left:50%"></i></div></div>
 <div class="row" id="clsPick"></div><label class="sl" id="clsWl" hidden>Wipe<input type="range" id="clsW" min="0" max="100" value="50"><output id="clsWo">50%</output></label></div>
-<div class="ptxt"><div><h3>Colored Lens Studio</h3><p class="tag">Grading help inside Premiere Pro and DaVinci Resolve</p></div>
+<div class="ptxt"><div><h3>Colored Lens Studio</h3><p class="tag">Grading help inside Premiere Pro and DaVinci Resolve</p></div><p class="devnote"><span class="dev">In development</span>Early days: the panel is changing quickly and some features may not work yet.</p>
 <div class="read" id="clsRead"></div><div class="pal" id="clsPal" style="height:22px"></div>
 <div><p class="note" style="margin-bottom:8px">Directions</p><div class="row" id="clsDir" style="display:flex;flex-wrap:wrap;gap:6px"></div></div>
-<p class="note">Click a face in the frame to check its exposure. A simplified in-browser version of the panel's Shot tab.</p>
-<div class="facts"><span>Hosts <b>Premiere Pro 25.6+, Resolve Studio 19+, web</b></span><span>Version <b>0.21.1</b></span><span>Price <b>Free</b></span></div>
+<p class="note">Pick a direction to see it on the frame, then drag the wipe to compare before and after. Click a face to check its exposure. A simplified in-browser version of the panel's Shot tab.</p>
+<div class="facts"><span>Hosts <b>Premiere Pro 25.6+, Resolve Studio 19+, web</b></span><span>Version <b>0.21.1</b></span><span>Price <b>Free</b></span><span>Status <b>In development</b></span></div>
 <div class="acts"><a class="btn mag" href="https://github.com/designpraiseeric/colored-lens-studio/releases" target="_blank" rel="noopener">Download</a><a class="btn line" href="https://designpraiseeric.github.io/colored-lens-studio/panel/" target="_blank" rel="noopener">Web version</a></div></div></div>
 <div class="stage" id="st3" hidden>
-<div class="ctl"><div class="view" style="background:var(--grid);box-shadow:inset 0 0 0 1px var(--line);height:clamp(260px,30vw,360px);background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:32px 32px"><canvas id="alCv" style="position:absolute;inset:0;width:100%;height:100%" aria-label="Path points animating into a straight line"></canvas></div>
+<div class="ctl"><p class="note" style="margin-bottom:10px">Try one here: Aline straightens the points of a path</p><div class="view" style="background:var(--grid);box-shadow:inset 0 0 0 1px var(--line);height:clamp(260px,30vw,360px);background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:32px 32px"><canvas id="alCv" style="position:absolute;inset:0;width:100%;height:100%" aria-label="Path points animating into a straight line"></canvas></div>
 <label class="sl">Stagger<input type="range" id="alSt" min="0" max="12" value="5"><output id="alStO">5f</output></label>
 <label class="sl">Angle<input type="range" id="alAn" min="-45" max="45" value="-12"><output id="alAnO">-12°</output></label>
 <label class="sl">Bounce<input type="range" id="alBo" min="0" max="100" value="55"><output id="alBoO">55%</output></label>
 <div class="row"><button class="btn sm" type="button" id="alGo">Align to line</button><button class="btn sm line" type="button" id="alRe">Reset</button><button class="btn sm line" type="button" id="alNew">New path</button></div></div>
-<div class="ptxt"><div><h3>Aline</h3><p class="tag">Align points to a line in After Effects</p></div><p>Select vertices on a shape or mask path and animate them into a straight line, with stagger, easing and physics-based bounce. No manual keyframing.</p>
-<div class="vers"><div><b>2.1</b><span class="mute">Any line angle, custom reference point, chain and focal drift</span></div><div><b>2.0</b><span class="mute">Tensile fidelity and a single master physics control</span></div><div><b>1.0</b><span class="mute">Alignment, stagger, easing presets and chained nulls</span></div></div>
-<div class="facts"><span>Platform <b>After Effects, Windows and macOS</b></span><span>Price <b>Pay what you want</b></span></div>
-<div class="acts"><a class="btn mag" href="https://designpraiseeric.gumroad.com/l/aline" target="_blank" rel="noopener">Get Aline</a></div></div></div>`;
+<div class="ptxt"><div><h3>After Effects tools</h3><p class="tag">Baerista and the 14 scripts and panels it installs</p></div><p>Install Baerista once and open every tool from one panel, with updates in a click. Or get any tool on its own. Each one has a page with a live demo.</p><div class="aet"><a href="/tools/baerista/"><img src="/img/icons/baerista.svg" alt="" loading="lazy">Baerista</a><a href="/tools/aline/"><img src="/img/icons/aline.svg" alt="" loading="lazy">Aline</a><a href="/tools/compensate/"><img src="/img/icons/compensate.svg" alt="" loading="lazy">Compensate</a><a href="/tools/bouncer/"><img src="/img/icons/bouncer.svg" alt="" loading="lazy">Bouncer</a><a href="/tools/textjam/"><img src="/img/icons/textjam.svg" alt="" loading="lazy">TextJam</a><a href="/tools/slicer/"><img src="/img/icons/slicer.svg" alt="" loading="lazy">Slicer</a><a href="/tools/notable/"><img src="/img/icons/notable.svg" alt="" loading="lazy">Notable</a><a href="/tools/precompkit/"><img src="/img/icons/precompkit.svg" alt="" loading="lazy">Precomp Kit</a><a href="/tools/dockview/"><img src="/img/icons/dockview.svg" alt="" loading="lazy">DockView</a><a href="/tools/dockdocs/"><img src="/img/icons/dockdocs.svg" alt="" loading="lazy">DockDocs</a><a href="/tools/guided/"><img src="/img/icons/guided.svg" alt="" loading="lazy">Let’s Be Guided</a><a href="/tools/propup/"><img src="/img/icons/propup.svg" alt="" loading="lazy">Prop Up</a><a href="/tools/auff/"><img src="/img/icons/auff.svg" alt="" loading="lazy">Auff</a><a href="/tools/compyle/"><img src="/img/icons/compyle.svg" alt="" loading="lazy">Compyle</a><a href="/tools/footlogwork/"><img src="/img/icons/footlogwork.svg" alt="" loading="lazy">FootLogWork</a></div>
+<div class="facts"><span>Host <b>After Effects 2022+, Windows and macOS</b></span><span>Price <b>Free, name your price</b></span></div>
+<div class="acts"><a class="btn mag" href="/tools/">See all tools</a><a class="btn line" href="/tools/baerista/">Get Baerista</a></div></div></div></div>`;
 let curTool=-1;const inits=[];
 const openTool=(i,scroll)=>{if(i===curTool)return;curTool=i;document.querySelectorAll('.tool').forEach(t=>{t.classList.toggle('sel',+t.dataset.t===i);t.classList.add('turned');setTimeout(()=>t.classList.remove('turned'),380)});
 [0,1,2,3].forEach(j=>{const s=$('st'+j);s.hidden=j!==i;if(j===i){s.classList.remove('enter');s.offsetWidth;s.classList.add('enter')}});if(inits[i]){inits[i]();inits[i]=null}if(i===3)alGo();if(scroll)$('st'+i).scrollIntoView({behavior:'smooth',block:'center'})};
@@ -636,7 +662,7 @@ const run=async src=>{img.src=src;pv.src=src;pv.style.display='none';$('clsWipe'
 $('clsRead').innerHTML='<p class="note">Reading the frame…</p>';const a=await analyse(src);
 $('clsRead').innerHTML=`<div class="r"><b>Frame</b><span>${a.key}, ${a.temp}, ${a.sat}</span></div><div class="r"><b>Leads</b><span>${a.top} (${a.share}% of the lit picture)</span></div><div class="r"><b>Structure</b><span>${a.struct[0].toUpperCase()+a.struct.slice(1)}</span></div><div class="r"><b>Skin</b><span id="clsSkin" class="mute">Click a face</span></div>`;
 const tot=a.C.reduce((s,c)=>s+c[3],0);$('clsPal').innerHTML=a.C.map(c=>`<span style="flex:${c[3]/tot};background:rgb(${c[0]|0},${c[1]|0},${c[2]|0})"></span>`).join('');
-$('clsDir').innerHTML=dirsFor(a).map(d=>`<button class="chip" type="button" data-f="${d[0]}" title="${d[2]}">${d[1]}</button>`).join('')+'<button class="chip" type="button" data-f="">Original</button>'};
+$('clsDir').innerHTML=dirsFor(a).map(d=>`<button class="chip" type="button" data-f="${d[0]}" title="${d[2]}">${d[1]}</button>`).join('')+'<button class="chip" type="button" data-f="">Original</button>';$('clsDir').firstChild.click()};
 $('clsPick').innerHTML=SAMPLES.map((s,i)=>`<button class="chip" type="button" data-i="${i}" aria-pressed="${!i}">${s[1]}</button>`).join('')+'<label class="chip" style="cursor:pointer">Your frame<input type="file" accept="image/*" id="clsFile" style="position:absolute;opacity:0;width:1px;height:1px"></label>';
 $('clsPick').onclick=e=>{const b=e.target.closest('button');if(!b)return;$('clsPick').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));run(SAMPLES[b.dataset.i][0])};
 $('clsFile').onchange=e=>{const f=e.target.files[0];if(f){$('clsPick').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',false));run(URL.createObjectURL(f))}};
@@ -668,6 +694,61 @@ if(mode==='align'){ctx.strokeStyle=TH.mark;ctx.globalAlpha=.35;ctx.setLineDash([
 ctx.strokeStyle=TH.ink;ctx.lineWidth=3;ctx.lineJoin='round';ctx.beginPath();cur.forEach((p,i)=>{if(!i)ctx.moveTo(p[0],p[1]);else{const q=cur[i-1];ctx.quadraticCurveTo(q[0],q[1],(q[0]+p[0])/2,(q[1]+p[1])/2);if(i===cur.length-1)ctx.lineTo(p[0],p[1])}});ctx.stroke();
 cur.forEach((p,i)=>{ctx.fillStyle=i===0||i===cur.length-1?TH.mark:TH.card;ctx.strokeStyle=TH.mark;ctx.lineWidth=2;ctx.beginPath();ctx.rect(p[0]-5,p[1]-5,10,10);ctx.fill();ctx.stroke()});
 if(mode==='align'){ctx.save();ctx.translate(c0[0],c0[1]);ctx.rotate(Math.PI/4);ctx.fillStyle='#ffa800';ctx.fillRect(-6,-6,12,12);ctx.restore()}})}
+
+/* ===== demo hints: an animated pointer shows how each demo works, once per demo; skip or turn off anytime ===== */
+{const TK='dp-tips',SK='dp-tips-seen',touch=matchMedia('(hover:none)').matches;
+const tipsOn=()=>{try{return localStorage.getItem(TK)!=='off'}catch(e){return true}};
+const seen=()=>{try{return JSON.parse(localStorage.getItem(SK)||'[]')}catch(e){return[]}};
+const markSeen=i=>{try{const a=seen();if(a.indexOf(i)<0)a.push(i);localStorage.setItem(SK,JSON.stringify(a))}catch(e){}};
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const P=document.createElement('div');P.className='tipp';P.setAttribute('aria-hidden','true');
+P.innerHTML=(touch?'<svg viewBox="0 0 30 30"><circle cx="15" cy="15" r="11" fill="rgba(255,255,255,.85)" stroke="#1a0d3e" stroke-width="2"/></svg>':'<svg viewBox="0 0 30 30"><path d="M5 3l18 11-8 2-3 8z" fill="#fff" stroke="#1a0d3e" stroke-width="1.8" stroke-linejoin="round"/></svg>')+'<span class="rip"></span>';
+const B=document.createElement('div');B.className='tipb';B.setAttribute('role','status');B.setAttribute('aria-live','polite');
+document.body.append(P,B);
+const off=touch?[-15,-15]:[-5,-3];
+let run=0,active=-1,px=0,py=0;
+const at=(x,y)=>{px=x;py=y;P.style.transform=`translate(${x+off[0]}px,${y+off[1]}px)`};
+const pt=(el,fx=.5,fy=.5)=>{const r=el.getBoundingClientRect();return [r.left+scrollX+r.width*fx,r.top+scrollY+r.height*fy]};
+const say=(el,txt,n,tot)=>{const r=el.getBoundingClientRect(),bw=Math.min(300,innerWidth-24);let x=Math.max(12+scrollX,Math.min(r.left+scrollX+r.width/2-bw/2,scrollX+innerWidth-bw-12));
+const below=r.bottom+130<innerHeight||r.top<150;const y=below?r.bottom+scrollY+14:r.top+scrollY-14;
+B.innerHTML=`<p>${txt}</p><div class="tf"><span>${n} of ${tot}</span><button type="button" data-a="skip">Skip</button><button type="button" data-a="off">Turn off tips</button></div>`;
+B.classList.toggle('below',below);B.classList.toggle('above',!below);B.style.left=x+'px';B.style.setProperty('--ax',Math.max(14,Math.min(bw-24,r.left+scrollX+r.width/2-x-5))+'px');
+B.style.top=(below?y:y-B.offsetHeight)+'px';B.classList.add('on')};
+const end=()=>{run++;active=-1;P.classList.remove('on');B.classList.remove('on')};
+B.addEventListener('click',e=>{const a=e.target.closest('button');if(!a)return;if(a.dataset.a==='off'){try{localStorage.setItem(TK,'off')}catch(_){}}end()});
+addEventListener('keydown',e=>{if(e.key==='Escape'&&active>=0)end()});
+const tap=async(el,fx,fy,id)=>{const[x,y]=pt(el,fx,fy);at(x,y);await wait(reduce?0:780);if(id!==run)return false;P.classList.add('press');setTimeout(()=>P.classList.remove('press'),260);await wait(140);return id===run};
+const drag=async(inp,vals,id)=>{const r=()=>inp.getBoundingClientRect(),mn=+inp.min,mx=+inp.max,xy=v=>{const b=r();return [b.left+scrollX+10+(b.width-20)*(v-mn)/(mx-mn),b.top+scrollY+b.height/2]};
+let v=+inp.value;at(...xy(v));await wait(reduce?0:780);if(id!==run)return false;P.classList.add('press');
+for(const to of vals){const from=v,steps=reduce?1:28;for(let k=1;k<=steps;k++){if(id!==run)return false;v=Math.round(from+(to-from)*k/steps);inp.value=v;inp.dispatchEvent(new Event('input',{bubbles:true}));P.style.transition='none';at(...xy(v));await wait(22)}P.style.transition='';await wait(380)}
+P.classList.remove('press');return id===run};
+const $$=q=>document.querySelector(q);
+const TOURS=[
+ [['tap','#clSw button:nth-child(6)','Pick a hue to see how films use it'],['tap','#clSw button:nth-child(5)','Every hue has a light side and a dark side'],['show','#clPal button:nth-child(3)','Click a swatch to copy its hex code']],
+ [['tap','#lkL button:nth-child(5)','Change the lighting setup'],['tap','#lkC button:nth-child(4)','Try a colour look on the same shot'],['tap','#lkA2 button:nth-child(3)','Change the aspect ratio']],
+ [['tap','#clsDir button:nth-child(2)','Pick a grading direction'],['drag','#clsW',[18,82,50],'Drag the wipe to compare before and after'],['face','#clsView','Click a face to check its exposure']],
+ [['drag','#alSt',[11,2,6],'Change the stagger between points'],['drag','#alAn',[20,-12],'Change the angle of the line'],['tap','#alGo','Align the points again to see it']]];
+const play=async(i,forced)=>{if(!forced&&(!tipsOn()||seen().indexOf(i)>=0))return;if(active>=0)end();const id=++run;active=i;markSeen(i);
+const stage=$('st'+i),T=TOURS[i];const sr=stage.getBoundingClientRect();at(sr.left+scrollX+sr.width*.5,sr.top+scrollY+sr.height*.75);P.classList.add('on');
+for(let k=0;k<T.length;k++){if(id!==run||stage.hidden)return end();const[t,q,a3,a4]=T[k],el=$$(q);if(!el||!el.offsetParent)continue;
+ {const r=el.getBoundingClientRect();if(r.top<70||r.bottom>innerHeight-10){el.scrollIntoView({block:'nearest',behavior:reduce?'auto':'smooth'});await wait(reduce?50:550);if(id!==run)return}}
+ say(el,t==='drag'?a4:a3,k+1,T.length);
+ if(t==='tap'){if(!await tap(el,.5,.5,id))return;el.click()}
+ else if(t==='show'){if(!await tap(el,.5,.5,id))return}
+ else if(t==='drag'){if(!await drag(el,a3,id))return}
+ else if(t==='face'){if(!await tap(el,.52,.42,id))return;const r=el.getBoundingClientRect();el.dispatchEvent(new MouseEvent('click',{bubbles:true,clientX:r.left+r.width*.52,clientY:r.top+r.height*.42}))}
+ await wait(reduce?2200:1700)}
+if(id===run)end()};
+/* a visitor's own touch ends the hint */
+document.addEventListener('pointerdown',e=>{if(active<0||!e.isTrusted||B.contains(e.target))return;end()},true);
+/* "Show me how" under each demo */
+[0,1,2,3].forEach(i=>{const c=$('st'+i).querySelector('.ctl');const b=document.createElement('button');b.type='button';b.className='howto';b.textContent='Show me how';b.onclick=e=>{e.stopPropagation();setTimeout(()=>play(i,true),30)};c.appendChild(b)});
+/* start when a demo is properly in view */
+let pend=null;const check=()=>{if(active>=0||!tipsOn())return;for(let i=0;i<4;i++){const st=$('st'+i);if(st.hidden||seen().indexOf(i)>=0)continue;const r=st.getBoundingClientRect();
+ if(r.top<innerHeight*.55&&r.bottom>innerHeight*.45){if(pend===i)return;clearTimeout(check.t);pend=i;check.t=setTimeout(()=>{pend=null;const r2=st.getBoundingClientRect();if(!st.hidden&&r2.top<innerHeight*.6&&r2.bottom>innerHeight*.4&&active<0)play(i)},800);return}}pend=null;clearTimeout(check.t)};
+let ticking=false;addEventListener('scroll',()=>{if(ticking)return;ticking=true;requestAnimationFrame(()=>{ticking=false;check()})},{passive:true});
+$('toolTiles').addEventListener('click',()=>setTimeout(check,450));
+}
 const tio=new IntersectionObserver(es=>{if(es[0].isIntersecting){openTool(0);tio.disconnect()}},{threshold:.15});tio.observe($('toolTiles'));
 
 /* instagram */
