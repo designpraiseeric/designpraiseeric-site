@@ -23,11 +23,15 @@
      perDay       scale a/pass by the number of shoot days
      u: 1         "not sure" — widens the range a little
      when:{q,any} the effect only counts when another question has one of these answers
+     needScale    multiplies every "Need it" asset line (used by the AI options)
+     cats:[…]     the option only appears for these categories
+   QUESTION FIELDS: show:{q,in} hides a question unless another has one of these answers; hideIf:{q,in} hides it when it does
+     (film's shoot questions disappear for AI-led work); notes:{optionId:'text'} explains a choice
    RANGE QUESTIONS
      scale:{ref, exp}  production × (value / ref) ^ exp   (exp < 1: longer = cheaper per unit)
    ===================================================================== */
 window.RATES = {
-  version: '2026-11-26',
+  version: '2026-11-26b',
   owner: { name: 'Divinepraise Eric', studio: 'DesignPraise Studio', email: 'divinepraiseeric@gmail.com', wa: '2348135726234' },
 
   /* Range band around the computed figure. ANCHOR: a standard-tier motion video, motion only,
@@ -161,6 +165,32 @@ window.RATES = {
     ] }
   },
 
+  /* ---------- production questions shown at the end of Details (categories list which they use in `production`) ---------- */
+  production: {
+    ai: { id: 'ai', type: 'single', label: 'AI in the production', hint: 'How much AI you’re comfortable with in the work. Some brands don’t allow it at all; that’s fine.', options: [
+      { id: 'none', label: 'Handmade only, no AI tools at all', m: 1.2 },
+      { id: 'assist', label: 'AI tools behind the scenes are fine', def: true },
+      { id: 'elements', label: 'AI-generated elements are welcome', m: 0.97, needScale: 0.55 },
+      { id: 'led', label: 'Mostly AI-generated, directed and finished by hand', m: 0.6, needScale: 0.4, pass: 25000, perMin: true, u: 1, line: 'Generation credits', cats: ['motion', 'anim2d', 'anim3d', 'film', 'artdir', 'motionsys'] }
+    ], notes: {
+      none: 'No generative tools anywhere, including stock, upscaling and voice. It takes longer, which is reflected in the figure.',
+      elements: 'Backgrounds, B-roll, stills or voice may be generated; design, animation and finishing stay handmade. AI-generated parts may not be protected by copyright, so exclusivity can’t be guaranteed for them.',
+      led: 'Shots are generated, then directed, selected, edited, graded and finished by me. There is no shoot, so crew, kit and cast drop out. AI-generated parts may not be protected by copyright, so exclusivity can’t be guaranteed for them.'
+    } },
+    disclose: { id: 'disclose', type: 'single', label: 'Does the AI use need to be disclosed?', show: { q: 'ai', in: ['elements', 'led'] }, options: [
+      { id: 'no', label: 'No requirement', def: true }, { id: 'client', label: 'We’ll disclose it ourselves' },
+      { id: 'label', label: 'Add a “made with AI” label to the work' }, { id: 'ns', label: 'Not sure', u: 1 }
+    ] },
+    signoff: { id: 'signoff', type: 'single', label: 'Who signs off the work?', hint: 'More approvers usually means more rounds of feedback to combine.', options: [
+      { id: 'one', label: 'Just me', def: true }, { id: 'few', label: '2–3 people', m: 1.1 },
+      { id: 'many', label: 'A committee or several departments', m: 1.25, u: 1 }
+    ] },
+    look: { id: 'look', type: 'single', label: 'How settled is the look?', options: [
+      { id: 'clear', label: 'Clear: references or a style guide', def: true }, { id: 'rough', label: 'A rough idea', m: 1.05 },
+      { id: 'zero', label: 'Starting from zero', p: 0.15, u: 1, line: 'Style frames and look development' }
+    ] }
+  },
+
   /* ---------- step 5: plan, volume and payment ---------- */
   volume: { id: 'count', label: 'How many pieces like this?', hint: 'Same style and brief. Each extra piece costs less because the look is already set.', min: 1, max: 20,
     steps: [{ from: 2, off: 0.05 }, { from: 3, off: 0.1 }, { from: 5, off: 0.15 }, { from: 10, off: 0.2 }] },
@@ -192,14 +222,15 @@ window.RATES = {
     ['Refunds', 'Before direction starts, the deposit is refunded less 25% for discovery and planning. After direction starts, the deposit is non-refundable and completed milestones are due. Nothing is refunded once final files are delivered.'],
     ['Cancellation and pauses', 'Projects paused for more than 30 days by the client may be rescheduled into the next free slot. Rush and emergency slots are non-refundable once booked.'],
     ['Rights', 'Usage rights transfer when the final invoice is paid. Third-party items (music, stock, fonts, voice talent) follow their own licences.'],
-    ['Late payment', 'Invoices are due within 7 days. Final files are released once the balance is paid.']
+    ['Late payment', 'Invoices are due within 7 days. Final files are released once the balance is paid.'],
+    ['AI-generated material', 'Where you choose AI-generated elements, those parts may not be protected by copyright and the generation tools’ own terms apply, so exclusivity can’t be guaranteed for them. Handmade-only projects use no generative tools anywhere.']
   ],
 
   /* ---------- project categories (the client picks ONE) ---------- */
   categories: [
     {
       id: 'motion', label: 'Motion design', blurb: 'Explainers, product films, social motion, titles and logo animation', colour: '#03eed8', tiles: [4],
-      base: 215000, min: 65000, rights: true, logistics: ['turnaround', 'revisions', 'brand', 'formats', 'channels', 'territory', 'term', 'portfolio'],
+      base: 215000, min: 65000, rights: true, production: ['ai', 'disclose', 'signoff', 'look'], logistics: ['turnaround', 'revisions', 'brand', 'formats', 'channels', 'territory', 'term', 'portfolio'],
       questions: [
         { id: 'variant', type: 'single', label: 'What kind of piece?', options: [
           { id: 'explainer', label: 'Explainer', def: true }, { id: 'product', label: 'Product or app film', m: 1.1 },
@@ -239,7 +270,7 @@ window.RATES = {
     },
     {
       id: 'anim2d', label: '2D animation', blurb: 'Character animation, stories, series and kids content', colour: '#038eee', tiles: [3, 4, 5],
-      base: 500000, min: 170000, rights: true, logistics: ['turnaround', 'revisions', 'brand', 'formats', 'channels', 'territory', 'term', 'portfolio'],
+      base: 500000, min: 170000, rights: true, production: ['ai', 'disclose', 'signoff', 'look'], logistics: ['turnaround', 'revisions', 'brand', 'formats', 'channels', 'territory', 'term', 'portfolio'],
       questions: [
         { id: 'variant', type: 'single', label: 'What kind of piece?', options: [
           { id: 'explainer', label: 'Character explainer', def: true }, { id: 'story', label: 'Short story or film', m: 1.15 },
@@ -275,7 +306,7 @@ window.RATES = {
     },
     {
       id: 'anim3d', label: '3D animation', blurb: 'Product visualisation, launch films and 3D scenes', colour: '#a57bff', tiles: [0, 4, 8],
-      base: 570000, min: 170000, rights: true, logistics: ['turnaround', 'revisions', 'brand', 'formats', 'channels', 'territory', 'term', 'portfolio'],
+      base: 570000, min: 170000, rights: true, production: ['ai', 'disclose', 'signoff', 'look'], logistics: ['turnaround', 'revisions', 'brand', 'formats', 'channels', 'territory', 'term', 'portfolio'],
       questions: [
         { id: 'variant', type: 'single', label: 'What kind of piece?', options: [
           { id: 'turn', label: 'Product turntable or hero shots', m: 0.75 }, { id: 'launch', label: 'Product launch film', def: true },
@@ -309,7 +340,7 @@ window.RATES = {
     },
     {
       id: 'film', label: 'Film and video production', blurb: 'Directing and shooting commercials, short films, documentaries, events and church media', colour: '#d903ee', tiles: [0, 4, 8],
-      base: 0, min: 170000, rights: true, logistics: ['turnaround', 'revisions', 'brand', 'formats', 'channels', 'territory', 'term', 'portfolio'],
+      base: 0, min: 170000, rights: true, production: ['ai', 'disclose', 'signoff', 'look'], logistics: ['turnaround', 'revisions', 'brand', 'formats', 'channels', 'territory', 'term', 'portfolio'],
       questions: [
         { id: 'variant', type: 'single', label: 'What are we making?', options: [
           { id: 'brand', label: 'Brand or corporate film', b: 500000, def: true }, { id: 'ad', label: 'Commercial', b: 600000 },
@@ -322,24 +353,24 @@ window.RATES = {
           { id: 'drone', label: 'Drone shots', pass: 80000, perDay: true, line: 'Drone operator' }, { id: 'live', label: 'Live stream', pass: 150000, line: 'Live-stream setup' }
         ] },
         { id: 'length', type: 'range', label: 'Finished length', unit: 's', min: 15, max: 1800, step: 15, def: 90, scale: { ref: 90, exp: 0.35 } },
-        { id: 'days', type: 'range', label: 'Shoot days', unit: 'd', min: 0.5, max: 10, step: 0.5, def: 1, scale: { ref: 1, exp: 0.8 } },
-        { id: 'crew', type: 'single', label: 'Crew size', options: [
+        { id: 'days', type: 'range', hideIf: { q: 'ai', in: ['led'] }, label: 'Shoot days', unit: 'd', min: 0.5, max: 10, step: 0.5, def: 1, scale: { ref: 1, exp: 0.8 } },
+        { id: 'crew', type: 'single', hideIf: { q: 'ai', in: ['led'] }, label: 'Crew size', options: [
           { id: 'solo', label: 'Just me (director and camera)', m: 0.8 }, { id: 'small', label: 'Small crew (3–5)', def: true },
           { id: 'full', label: 'Full crew (6–12)', m: 1.6 }, { id: 'large', label: 'Large production', m: 2.4, u: 1 }
         ] },
-        { id: 'kit', type: 'single', label: 'Camera and lighting', options: [
+        { id: 'kit', type: 'single', hideIf: { q: 'ai', in: ['led'] }, label: 'Camera and lighting', options: [
           { id: 'mine', label: 'Standard kit', def: true }, { id: 'cine', label: 'Cinema camera package', pass: 150000, perDay: true, line: 'Cinema camera rental' },
           { id: 'high', label: 'High-end package (lenses, lighting, grip)', pass: 400000, perDay: true, line: 'High-end equipment rental' }
         ] },
-        { id: 'cast', type: 'single', label: 'On-screen talent', options: [
+        { id: 'cast', type: 'single', hideIf: { q: 'ai', in: ['led'] }, label: 'On-screen talent', options: [
           { id: 'none', label: 'Real people or your team', def: true }, { id: 'few', label: '1–3 actors', pass: 120000, perDay: true, line: 'Actors' },
           { id: 'many', label: '4–10 actors', pass: 350000, perDay: true, line: 'Cast' }, { id: 'call', label: 'Casting call needed', a: 115000, pass: 150000, perDay: true, line: 'Casting and cast' }
         ] },
-        { id: 'loc', type: 'single', label: 'Locations', options: [
+        { id: 'loc', type: 'single', hideIf: { q: 'ai', in: ['led'] }, label: 'Locations', options: [
           { id: 'l1', label: 'One location', def: true }, { id: 'l2', label: '2–3 locations', m: 1.15 }, { id: 'l4', label: '4 or more', m: 1.3 },
           { id: 'studio', label: 'Studio rental', pass: 150000, perDay: true, line: 'Studio rental' }
         ] },
-        { id: 'where', type: 'single', label: 'Where is the shoot?', options: [
+        { id: 'where', type: 'single', hideIf: { q: 'ai', in: ['led'] }, label: 'Where is the shoot?', options: [
           { id: 'lagos', label: 'Lagos', def: true }, { id: 'ng', label: 'Elsewhere in Nigeria', pass: 150000, line: 'Travel and lodging' },
           { id: 'intl', label: 'Outside Nigeria', pass: 600000, u: 2, line: 'International travel (quoted separately)' }
         ] },
@@ -358,7 +389,7 @@ window.RATES = {
     },
     {
       id: 'edit', label: 'Editing and post', blurb: 'Edits from your footage: social, YouTube, promos, events and sermons', colour: '#ffa800', tiles: [0, 2, 6, 8],
-      base: 65000, min: 35000, rights: false, logistics: ['turnaround', 'revisions', 'brand', 'formats', 'portfolio'],
+      base: 65000, min: 35000, rights: false, production: ['ai', 'disclose', 'signoff', 'look'], logistics: ['turnaround', 'revisions', 'brand', 'formats', 'portfolio'],
       questions: [
         { id: 'variant', type: 'single', label: 'What kind of edit?', options: [
           { id: 'social', label: 'Social reel or short', m: 1 }, { id: 'yt', label: 'YouTube or long-form', def: true },
@@ -382,7 +413,7 @@ window.RATES = {
     },
     {
       id: 'vfx', label: 'Colour and VFX', blurb: 'Grading, compositing, tracking, clean-up and screen replacement', colour: '#eed903', tiles: [0, 2, 4, 6, 8],
-      base: 0, min: 45000, rights: false, logistics: ['turnaround', 'revisions', 'formats', 'portfolio'],
+      base: 0, min: 45000, rights: false, production: ['ai', 'disclose', 'signoff', 'look'], logistics: ['turnaround', 'revisions', 'formats', 'portfolio'],
       questions: [
         { id: 'variant', type: 'single', label: 'Main job', hint: 'Price is per shot.', options: [
           { id: 'grade', label: 'Colour grade', b: 11000, def: true }, { id: 'comp', label: 'Green screen or compositing', b: 45000 },
@@ -406,7 +437,7 @@ window.RATES = {
     },
     {
       id: 'identity', label: 'Brand identity', blurb: 'Logos, identity systems, guidelines and rebrands', colour: '#6403ee', tiles: [1, 4],
-      base: 0, min: 170000, rights: false, logistics: ['turnaround', 'revisions', 'portfolio'],
+      base: 0, min: 170000, rights: false, production: ['ai', 'disclose', 'signoff'], logistics: ['turnaround', 'revisions', 'portfolio'],
       questions: [
         { id: 'variant', type: 'single', label: 'Scope', options: [
           { id: 'logo', label: 'Logo only', b: 255000 }, { id: 'basic', label: 'Logo and basic identity', b: 500000, def: true },
@@ -443,7 +474,7 @@ window.RATES = {
     },
     {
       id: 'motionsys', label: 'Motion identity and templates', blurb: 'Motion systems, channel kits, Essential Graphics and automated templates', colour: '#03ee63', tiles: [0, 1, 2, 3, 4, 5, 6, 7, 8],
-      base: 0, min: 85000, rights: false, logistics: ['turnaround', 'revisions', 'brand', 'portfolio'],
+      base: 0, min: 85000, rights: false, production: ['ai', 'disclose', 'signoff', 'look'], logistics: ['turnaround', 'revisions', 'brand', 'portfolio'],
       questions: [
         { id: 'variant', type: 'single', label: 'Scope', options: [
           { id: 'logo', label: 'Logo animation only', b: 130000 }, { id: 'yt', label: 'Channel kit (intro, end screen, lower thirds)', b: 400000, def: true },
@@ -466,7 +497,7 @@ window.RATES = {
     },
     {
       id: 'artdir', label: 'Art direction', blurb: 'Creative direction, style frames, treatments and production design', colour: '#d903ee', tiles: [1, 3, 5, 7],
-      base: 135000, min: 85000, rights: false, logistics: ['turnaround', 'revisions', 'brand', 'portfolio'],
+      base: 135000, min: 85000, rights: false, production: ['ai', 'disclose', 'signoff'], logistics: ['turnaround', 'revisions', 'brand', 'portfolio'],
       questions: [
         { id: 'variant', type: 'single', label: 'What do you need?', options: [
           { id: 'frames', label: 'Style frames and look development', def: true }, { id: 'campaign', label: 'Campaign art direction', m: 1.2 },
@@ -488,7 +519,7 @@ window.RATES = {
     },
     {
       id: 'tools', label: 'Custom tools and training', blurb: 'After Effects and Premiere scripts, panels, pipelines and workshops', colour: '#03ee63', tiles: [0, 1, 2, 3, 4, 5, 6, 7, 8],
-      base: 0, min: 85000, rights: false, logistics: ['turnaround', 'revisions', 'portfolio'],
+      base: 0, min: 85000, rights: false, production: ['signoff'], logistics: ['turnaround', 'revisions', 'portfolio'],
       questions: [
         { id: 'variant', type: 'single', label: 'What do you need?', options: [
           { id: 'script', label: 'After Effects script', b: 215000, def: true }, { id: 'panel', label: 'After Effects panel (with interface)', b: 645000 },

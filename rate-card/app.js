@@ -35,7 +35,17 @@
   }
   var curInfo = function () { var m = market(); var id = S.cur || (m ? m.def : 'NGN'); var f = fxFor(id); return Object.assign({ id: id }, R.currencies[id], { fx: f.fx, how: f.how }); };
   function fxLine(cur) { if (cur.id === 'NGN') return ''; return cur.symbol + '1 = ₦' + Math.round(cur.fx).toLocaleString('en-GB') + ' (' + cur.how + (cur.how === 'live' && FX.at ? ', ' + new Date(FX.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '') + ')'; }
-  function optsOf(q) { if (Array.isArray(q.options)) return q.options; var m = market(); return q.options[m ? m.revenue : 'ngn']; }
+  function optsOf(q) {
+    var list = Array.isArray(q.options) ? q.options : q.options[market() ? market().revenue : 'ngn'];
+    var c = cat(); return list.filter(function (o) { return !o.cats || !c || o.cats.indexOf(c.id) > -1; });
+  }
+  function prodQ(c) { return (c.production || []).map(function (id) { return R.production[id]; }).filter(Boolean); }
+  function allQ(c) { return c.questions.concat(prodQ(c), logistics(c)); }
+  function visible(c, q) {
+    var rule = q.show || q.hideIf; if (!rule) return true;
+    var w = allQ(c).find(function (x) { return x.id === rule.q; }), hit = !!w && rule.in.indexOf(val(c, w)) > -1;
+    return q.show ? hit : !hit;
+  }
   function logistics(c) { return (c.logistics || []).map(function (id) { return id === 'formats' ? R.shared.videoFormats : R.shared[id]; }).filter(Boolean); }
   function defaultOf(q) {
     if (q.type === 'range') return q.def;
@@ -44,7 +54,12 @@
     if (q.type === 'multi') return o.filter(function (x) { return x.def; }).map(function (x) { return x.id; });
     return (o.find(function (x) { return x.def; }) || o[0]).id;
   }
-  function val(c, q) { var a = S.ans[c.id] || {}; return a[q.id] === undefined ? defaultOf(q) : a[q.id]; }
+  function val(c, q) {
+    var a = S.ans[c.id] || {}, v = a[q.id];
+    if (v === undefined) return defaultOf(q);
+    if (q.type === 'single' && !optsOf(q).some(function (o) { return o.id === v; })) return defaultOf(q);
+    return v;
+  }
   function setVal(c, q, v) { (S.ans[c.id] = S.ans[c.id] || {})[q.id] = v; }
   var sum = function (a) { return a.reduce(function (s, x) { return s + x.v; }, 0); };
 
@@ -71,7 +86,7 @@
   function compute() {
     var c = cat(); if (!c) return null;
     var m = market() || R.markets[0], L = m.level, T = tierInfo(), tm = T.t.m;
-    var all = c.questions.concat(logistics(c));
+    var all = allQ(c).filter(function (q) { return visible(c, q); });
     var base = c.base, mult = 1, scale = 1, u = T.u, lines = [], pass = [], perMin = 1, perDay = 1, chosen = [], unsure = 0;
     var lenQ = c.questions.find(function (q) { return q.id === 'length'; }); if (lenQ) perMin = Math.max(1, val(c, lenQ) / 60);
     var dayQ = c.questions.find(function (q) { return q.id === 'days'; }); if (dayQ) perDay = val(c, dayQ);
@@ -91,12 +106,14 @@
       var wv = val(c, wq); wv = Array.isArray(wv) ? wv : [wv];
       return w.any.some(function (id) { return wv.indexOf(id) > -1; });
     });
-    chosen.forEach(function (x) { var o = x.o; if (o.b) base += o.b; if (o.m) mult *= o.m; if (o.u) { u += o.u; unsure++; } });
+    var needScale = 1;
+    chosen.forEach(function (x) { var o = x.o; if (o.b) base += o.b; if (o.m) mult *= o.m; if (o.needScale) needScale *= o.needScale; if (o.u) { u += o.u; unsure++; } });
     var production = base * scale * mult, floored = false;
     if (production < (c.min || 0)) { production = c.min; floored = true; }
     chosen.forEach(function (x) {
-      var o = x.o, label = o.line || o.label, k = (o.perMin ? perMin : 1) * (o.perDay ? perDay : 1);
-      if (o.p) lines.push({ label: label, v: production * o.p });
+      var asset = x.q.type === 'assets', ns = asset ? needScale : 1;
+      var o = x.o, label = (o.line || o.label) + (asset && ns < 1 ? ' with AI' : ''), k = (o.perMin ? perMin : 1) * (o.perDay ? perDay : 1) * ns;
+      if (o.p) lines.push({ label: label, v: production * o.p * ns });
       if (o.a) lines.push({ label: label, v: o.a * k });
       if (o.pass) pass.push({ label: label, v: o.pass * k });
     });
@@ -168,9 +185,11 @@
   }
   function questionHTML(c, q) {
     var key = 'c.' + q.id, v = val(c, q);
+    if (!visible(c, q)) return '';
     if (q.type === 'range') return rangeBlock(key, q, v);
     if (q.type === 'assets') return assetsBlock(key, q, v);
-    return qBlock(key, q, chipGroup(key, q, v, q.type === 'multi'));
+    var note = q.notes && q.notes[v] ? '<p class="qnote">' + esc(q.notes[v]) + '</p>' : '';
+    return qBlock(key, q, chipGroup(key, q, v, q.type === 'multi') + note);
   }
   function navHTML(i) {
     return '<div class="nav">' + (i > 0 ? '<button type="button" class="btn line" data-go="' + (i - 1) + '">Back</button>' : '<span></span>') +
@@ -202,7 +221,7 @@
   function detailsHTML() {
     var c = cat();
     if (!c) return stepShell(2, 'Details', 'Pick a project type first.', '');
-    return stepShell(2, c.label, esc(c.blurb) + '. Choose what fits; anything you’re unsure about can stay on the default.', c.questions.map(function (q) { return questionHTML(c, q); }).join(''));
+    return stepShell(2, c.label, esc(c.blurb) + '. Choose what fits; anything you’re unsure about can stay on the default.', c.questions.concat(prodQ(c)).map(function (q) { return questionHTML(c, q); }).join(''));
   }
   function deliveryHTML() {
     var c = cat();
@@ -311,10 +330,11 @@
     if (k.indexOf('a.') === 0) { pressGroup(b); S.about[k.slice(2)] = v; updateTier(); changed(); return; }
     if (k.indexOf('p.') === 0) { pressGroup(b); S.plan[k.slice(2)] = v; changed(); return; }
     if (k.indexOf('c.') === 0) {
-      var c = cat(), q = c.questions.concat(logistics(c)).find(function (x) { return x.id === k.slice(2); });
+      var c = cat(), q = allQ(c).find(function (x) { return x.id === k.slice(2); });
       if (q.type === 'assets') { pressGroup(b); var a = Object.assign({}, val(c, q)); a[b.dataset.item] = v; setVal(c, q, a); }
       else if (q.type === 'multi') { pressGroup(b, true); var arr = val(c, q).slice(), ix = arr.indexOf(v); if (ix > -1) arr.splice(ix, 1); else arr.push(v); setVal(c, q, arr); }
       else { pressGroup(b); setVal(c, q, v); }
+      if (q.notes || allQ(c).some(function (x) { var r = x.show || x.hideIf; return r && r.q === q.id; })) { var y = scrollY; rerender(2); scrollTo(0, y); }
       changed();
     }
   });
@@ -326,7 +346,7 @@
       t.style.setProperty('--f', ((v - t.min) / (t.max - t.min) * 100).toFixed(1) + '%');
       var q;
       if (k === 'p.count') { S.plan.count = v; q = { unit: '' }; }
-      else { var c = cat(); q = c.questions.concat(logistics(c)).find(function (x) { return x.id === k.slice(2); }); setVal(c, q, v); }
+      else { var c = cat(); q = allQ(c).find(function (x) { return x.id === k.slice(2); }); setVal(c, q, v); }
       var o = $('o-' + k.replace(/\W/g, '-')); if (o) o.textContent = unitTxt(q, v);
       cancelAnimationFrame(raf); raf = requestAnimationFrame(function () { changed(); });
       return;
@@ -404,7 +424,7 @@
   function selections() {
     var c = cat(), out = [];
     if (!c) return out;
-    c.questions.concat(logistics(c)).forEach(function (q) { out.push([q.label, labelOf(q, val(c, q))]); });
+    allQ(c).filter(function (q) { return visible(c, q); }).forEach(function (q) { out.push([q.label, labelOf(q, val(c, q))]); });
     return out;
   }
   function aboutPairs() {
@@ -444,6 +464,8 @@
     if (S.plan.budget) L.push('Client budget: ' + cur.symbol + S.plan.budget);
     if (E.unsure) L.push('“Not sure” answers: ' + E.unsure);
     if (E.floored) L.push('Minimum project fee applied.');
+    var aiQ = R.production.ai, aiV = E.c.production && E.c.production.indexOf('ai') > -1 ? val(E.c, aiQ) : null;
+    if (aiV) L.push('AI in the production: ' + labelOf(aiQ, aiV) + (aiV === 'elements' || aiV === 'led' ? ' (rights note: AI-generated parts may not be copyrightable; exclusivity not guaranteed for them)' : ''));
     hr('Tier');
     L.push(T.t.label + ' (×' + T.t.m + ', score ' + T.pts + ')' + (T.t.m > 1 ? ' — premium folded into the lines the client sees' : ''));
     aboutPairs().forEach(function (p) { L.push(p[0] + ': ' + p[1]); });
@@ -500,7 +522,7 @@
       category: c ? c.label : null, tier: tierInfo().t.label, market: market() ? market().label : null, currency: cur.id,
       estimate: E ? { lo: conv(E.lo, cur), hi: conv(E.hi, cur), mid: conv(E.total, cur) } : null,
       selections: selections(), plan: { count: S.plan.count, retainer: S.plan.retainer, budget: S.plan.budget },
-      schema: c ? c.questions.concat(logistics(c)).filter(function (q) { return q.type === 'single'; }).map(function (q) { return { id: q.id, label: q.label, options: optsOf(q).map(function (o) { return { id: o.id, label: o.label }; }) }; }) : []
+      schema: c ? allQ(c).filter(function (q) { return q.type === 'single'; }).map(function (q) { return { id: q.id, label: q.label, options: optsOf(q).map(function (o) { return { id: o.id, label: o.label }; }) }; }) : []
     };
   }
   function aiCall(body) {
@@ -542,9 +564,9 @@
     if (!AI.refs.summary) { el.innerHTML = ''; return; }
     var c = cat();
     el.innerHTML = '<p><b>What I noticed:</b> ' + esc(AI.refs.summary) + '</p>' + AI.refs.notes.map(function (n) { return '<p class="mute">' + esc(n) + '</p>'; }).join('') +
-      AI.refs.suggest.map(function (s, i) { var q = c && c.questions.concat(logistics(c)).find(function (x) { return x.id === s.q; }), o = q && optsOf(q).find(function (x) { return x.id === s.opt; }); if (!o || val(c, q) === o.id) return '';
+      AI.refs.suggest.map(function (s, i) { var q = c && allQ(c).find(function (x) { return x.id === s.q; }), o = q && optsOf(q).find(function (x) { return x.id === s.opt; }); if (!o || val(c, q) === o.id) return '';
         return '<div class="sugg"><span>' + esc(s.why || 'This looks closer to') + ': <b>' + esc(q.label) + ' → ' + esc(o.label) + '</b></span><button type="button" class="btn sm line" data-sg="' + i + '" style="min-height:38px;padding:0 14px">Use this</button></div>'; }).join('');
-    el.onclick = function (e) { var b = e.target.closest('[data-sg]'); if (!b) return; var s = AI.refs.suggest[+b.dataset.sg], q = c.questions.concat(logistics(c)).find(function (x) { return x.id === s.q; }); setVal(c, q, s.opt); rerender(2); rerender(3); changed(); b.parentElement.remove(); };
+    el.onclick = function (e) { var b = e.target.closest('[data-sg]'); if (!b) return; var s = AI.refs.suggest[+b.dataset.sg], q = allQ(c).find(function (x) { return x.id === s.q; }); setVal(c, q, s.opt); rerender(2); rerender(3); changed(); b.parentElement.remove(); };
   }
   function shrink(src, max) { return new Promise(function (res) { var w = src.videoWidth || src.naturalWidth, h = src.videoHeight || src.naturalHeight, k = Math.min(1, max / Math.max(w, h)); var cv = document.createElement('canvas'); cv.width = Math.round(w * k); cv.height = Math.round(h * k); cv.getContext('2d').drawImage(src, 0, 0, cv.width, cv.height); res(cv.toDataURL('image/jpeg', 0.78)); }); }
   function imgFrames(file) { return new Promise(function (res) { var u = URL.createObjectURL(file), im = new Image(); im.onload = function () { shrink(im, 1024).then(function (d) { URL.revokeObjectURL(u); res([d]); }); }; im.onerror = function () { URL.revokeObjectURL(u); res([]); }; im.src = u; }); }
