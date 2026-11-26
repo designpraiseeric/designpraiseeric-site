@@ -210,6 +210,11 @@ textarea{min-height:110px;resize:vertical}
 .est .note{font-size:13px;color:var(--mute);line-height:1.5}
 .budget{font-size:14px;padding:10px 12px;border-radius:10px;background:var(--tint)}
 .budget.low{background:color-mix(in srgb,var(--amber) 20%,transparent)}
+.est .st{display:inline-block;margin-top:8px;font-size:12px;font-weight:650;letter-spacing:.02em;padding:3px 10px;border-radius:999px;background:rgba(255,168,0,.18);color:#ffd48a}
+.est .st-call{background:rgba(217,3,238,.2);color:#f2a6ff}
+.checks{display:grid;gap:8px}
+.ck{font-size:14px;line-height:1.5;padding:10px 12px;border-radius:10px;background:var(--tint);border-left:3px solid var(--amber)}
+.ck-call{border-left-color:var(--magenta)}.ck-note{border-left-color:var(--aqua)}
 .close-sheet{display:none}
 
 /* mobile: estimate becomes a bottom sheet */

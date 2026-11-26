@@ -5,6 +5,7 @@
 import { json, cleanEmail } from '../_lib/common.js';
 import { SMTP, message, mailConfig, mailReady, layout } from '../_lib/mail.js';
 import { ensureRateTables } from '../_lib/rates-db.js';
+import { serverCheck, checkText } from '../_lib/rate-check.js';
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const clip = (v, n) => String(v == null ? '' : v).trim().slice(0, n);
@@ -33,8 +34,10 @@ export async function onRequestPost({ request, env }) {
   const ref = clip(b.ref, 24).replace(/[^A-Z0-9-]/gi, '');
   const d = b.data && typeof b.data === 'object' ? b.data : {};
   const netCountry = (request.cf && request.cf.country) || request.headers.get('CF-IPCountry') || '';
-  const text = clip(b.text, 60000) + (netCountry ? `\n\nNETWORK CHECK\nRequest came from: ${netCountry} (VPNs and travel can explain a mismatch with the market chosen)` : '');
-  const subject = clip(b.subject, 200) || `Rate card estimate ${ref} from ${name}`;
+  const k = serverCheck(d, netCountry);
+  const text = clip(b.text, 60000) + checkText(k, d) + (netCountry ? `\n\nNETWORK CHECK\nRequest came from: ${netCountry} (VPNs and travel can explain a mismatch with the market chosen)` : '');
+  const subject = (k.done && !k.match && k.sameVersion ? '[Check figures] ' : '') + (clip(b.subject, 200) || `Rate card estimate ${ref} from ${name}`);
+  const stored_d = Object.assign({ server: k }, d);
 
   let stored = false, recent = 0, id = null;
   if (env.NEWS_DB) {
@@ -45,7 +48,7 @@ export async function onRequestPost({ request, env }) {
       if (recent >= 6) return json({ error: 'Too many estimates from this address in the last hour. Please try again later.' }, 429);
       const ins = await env.NEWS_DB.prepare('INSERT INTO rc_estimates (ref, name, email, org, phone, category, tier, market, currency, lo, hi, net_country, data, report, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
         .bind(ref, name, email, clip(b.lead.org, 160), clip(b.lead.phone, 40), clip(d.category, 40), clip(d.tier, 20), clip(d.market, 10), clip(d.currency, 4),
-          Math.round(+d.lo || 0), Math.round(+d.hi || 0), netCountry, JSON.stringify(d).slice(0, 40000), text, Date.now())
+          Math.round(+d.lo || 0), Math.round(+d.hi || 0), netCountry, JSON.stringify(stored_d).slice(0, 40000), text, Date.now())
         .run();
       id = ins.meta && ins.meta.last_row_id; stored = true;
     } catch (e) { /* storage is a bonus; email is what matters */ }

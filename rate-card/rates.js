@@ -31,9 +31,14 @@
      (film's shoot questions disappear for AI-led work); notes:{optionId:'text'} explains a choice
    RANGE QUESTIONS
      scale:{ref, exp}  production × (value / ref) ^ exp   (exp < 1: longer = cheaper per unit)
+
+   CHECKS (engine.js, numbers in `checks` below)
+     Answers are checked against each other before they're priced. An impossible answer is priced at the
+     realistic minimum and explained; work the calculator can't price well is marked "needs a call".
+     The server (/api/estimate) prices every emailed estimate again from the raw answers, so an edited page can't change a figure.
    ===================================================================== */
-window.RATES = {
-  version: '2026-11-26c',
+(typeof window !== 'undefined' ? window : globalThis).RATES = {
+  version: '2026-11-26d',
   owner: { name: 'Divinepraise Eric', studio: 'DesignPraise Studio', email: 'divinepraiseeric@gmail.com', wa: '2348135726234' },
 
   /* Range band around the computed figure. ANCHOR: a standard-tier motion video, motion only,
@@ -43,6 +48,26 @@ window.RATES = {
 
   /* One working day of studio time at standard tier (used for timeline estimates). */
   dayRate: 36000,
+
+  /* ---------- checks: answers that don't fit together (Claude's recommended numbers, 26 Nov; adjust freely) ---------- */
+  checks: {
+    film: {
+      /* Finished minutes a shoot can cover in one day: [fastest possible, comfortable].
+         Fewer days than "fastest" are priced at that minimum; between the two, a tight-schedule line is added. */
+      pace: { brand: [4, 2], ad: [2, 1], mv: [5, 3], doc: [8, 4], short: [8, 4], testi: [20, 10], event: [60, 30], church: [60, 30] },
+      /* Answers that slow a shoot down (pace × factor). */
+      slow: { loc: { l2: 0.85, l4: 0.7 }, cast: { many: 0.85, call: 0.85 }, crew: { solo: 0.85, large: 0.85 }, blend: { vfx: 0.85 } },
+      tight: { p: 0.25, line: 'Tight shoot schedule (long days, extra hands)' }, // at the minimum; shrinks to 0 at the comfortable number of days
+      longForm: 1800,   // seconds: longer work goes to a call…
+      feature: 3600,    // …with a feature-film message from this length
+      longOk: ['event', 'church', 'testi'] // except full-length coverage, which is fine at any length
+    },
+    edit: { ratio: 1 },        // raw footage must be at least this × the finished length
+    emergencyMaxDays: 10,      // more working days of effort than this can't be an emergency job → needs a call
+    callAbove: 25000000,       // estimates above this (naira at Nigerian level) → needs a call
+    savingsFloor: 0.6,         // tier discount × volume or retainer × upfront saving never go below 60% of the studio fee
+    validDays: 14              // an emailed estimate is good for this many days
+  },
 
   /* ---------- currencies ----------
      fx = naira per unit: the REFERENCE rate, set when the market levels below were set.
@@ -239,7 +264,7 @@ window.RATES = {
   depositFloor: { international: 0.5, rush: 0.6 },
 
   policies: [
-    ['Estimates', 'Every figure here is an estimate. The fixed quote comes after a discovery call and a written brief, and it can be higher or lower than this range.'],
+    ['Estimates', 'Every figure here is an estimate. The fixed quote comes after a discovery call and a written brief, and it can be higher or lower than this range. An emailed estimate is valid for 14 days.'],
     ['Revisions', 'Two rounds of revisions are included at each review stage (direction, first cut, final). A round is one set of combined notes. Changes to an approved script, storyboard or direction count as new scope.'],
     ['Deposit', 'Work is booked when the deposit is paid. Production starts after the brief is signed off.'],
     ['Refunds', 'Before direction starts, the deposit is refunded less 25% for discovery and planning. After direction starts, the deposit is non-refundable and completed milestones are due. Nothing is refunded once final files are delivered.'],
@@ -247,6 +272,7 @@ window.RATES = {
     ['Rights', 'Usage rights transfer when the final invoice is paid. Third-party items (music, stock, fonts, voice talent) follow their own licences.'],
     ['Late payment', 'Invoices are due within 7 days. Final files are released once the balance is paid.'],
     ['Series and retainers', 'Scripts, assets and feedback are due on agreed dates, normally 5 working days before each delivery for weekly work. Late material moves that episode to the next free slot. Unused slots carry over for one month only. The one-off setup is paid with the first month.'],
+    ['Your answers', 'The estimate is priced on your answers: the scope, the assets you’ll supply, who signs off, the AI approach and the details about your organisation. If any of them turn out different, the price is worked out again. Volume and retainer savings apply to the number of pieces agreed in writing; if fewer are made, the saving is recalculated.'],
     ['Payment methods', 'Bank transfer only: naira for clients in Nigeria, US dollars or pounds for clients abroad. Crypto isn’t accepted.'],
     ['AI-generated material', 'Where you choose AI-generated elements, those parts may not be protected by copyright and the generation tools’ own terms apply, so exclusivity can’t be guaranteed for them. Handmade-only projects use no generative tools anywhere.']
   ],
@@ -387,8 +413,8 @@ window.RATES = {
           { id: 'motion', label: 'Motion graphics', m: 1.2 }, { id: 'anim', label: 'Animated sequences', m: 1.3 }, { id: 'vfx', label: 'VFX shots', m: 1.25 },
           { id: 'drone', label: 'Drone shots', pass: 80000, perDay: true, line: 'Drone operator' }, { id: 'live', label: 'Live stream', pass: 150000, line: 'Live-stream setup' }
         ] },
-        { id: 'length', type: 'range', label: 'Finished length', unit: 's', min: 15, max: 1800, step: 15, def: 90, scale: { ref: 90, exp: 0.35 } },
-        { id: 'days', type: 'range', hideIf: { q: 'ai', in: ['led'] }, label: 'Shoot days', unit: 'd', min: 0.5, max: 10, step: 0.5, def: 1, scale: { ref: 1, exp: 0.8 } },
+        { id: 'length', type: 'range', label: 'Finished length', hint: 'Over 30 minutes is quoted on a call; the figure is a starting point.', unit: 's', min: 15, max: 7200, step: 15, def: 90, scale: { ref: 90, exp: 0.35 } },
+        { id: 'days', type: 'range', hideIf: { q: 'ai', in: ['led'] }, label: 'Shoot days', hint: 'If it’s fewer than the length needs, the estimate uses the realistic minimum and tells you.', unit: 'd', min: 0.5, max: 40, step: 0.5, def: 1, scale: { ref: 1, exp: 0.8 } },
         { id: 'crew', type: 'single', hideIf: { q: 'ai', in: ['led'] }, label: 'Crew size', options: [
           { id: 'solo', label: 'Just me (director and camera)', m: 0.8 }, { id: 'small', label: 'Small crew (3–5)', def: true },
           { id: 'full', label: 'Full crew (6–12)', m: 1.6 }, { id: 'large', label: 'Large production', m: 2.4, u: 1 }
@@ -582,6 +608,9 @@ window.RATES = {
     estimate: 'This is an estimate, not a quote. The final price is set after a discovery call, a look at the full scope and a written brief, and it may go up or down.',
     budgetLow: 'Your budget is below this range. On the call we can bring it closer: a shorter piece, a simpler style, or assets you supply.',
     budgetFits: 'Your budget sits within this range.',
-    budgetHigh: 'Your budget is above this range, so there is room for extras such as more formats or a richer style.'
+    budgetHigh: 'Your budget is above this range, so there is room for extras such as more formats or a richer style.',
+    status: { ready: '', adjusted: 'Adjusted to what’s possible', call: 'Needs a call' },
+    callTotal: 'From',
+    tierCheck: 'Tier pricing is confirmed on the call.'
   }
 };
