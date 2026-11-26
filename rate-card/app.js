@@ -1,4 +1,4 @@
-/* Live rate card — engine and interface. Prices, rules and copy live in rates.js; nothing here needs editing for a price change.
+/* Live rate card — interface. Prices, rules and copy live in rates.js; the pricing engine is engine.js (shared with /api/estimate). Nothing here needs editing for a price change.
    The optional helper (/api/rate-ai) is checked once on load. If it isn't there or fails, every call returns null and the page carries on. */
 (function () {
   'use strict';
@@ -13,6 +13,7 @@
   /* ---------------- state ---------------- */
   var KEY = 'dp-rc-state';
   function makeRef() { var d = new Date(); return 'RC-' + d.getFullYear().toString().slice(2) + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0') + '-' + Math.random().toString(36).slice(2, 6).toUpperCase(); }
+  function validUntil() { var d = new Date(Date.now() + ((R.checks && R.checks.validDays) || 14) * 864e5); return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }); }
   var S, ACT;
   try { var saved = JSON.parse(sessionStorage.getItem(KEY) || 'null'); if (saved && saved.v === R.version) { S = saved.S; ACT = saved.ACT; } } catch (e) {}
   if (!S) S = { step: 0, market: null, cur: null, about: {}, cat: null, ans: {}, plan: { count: 1, retainer: 'no', pay: 'std', budget: '' }, refs: { links: '' }, lead: {}, ref: makeRef(), sent: false };
@@ -21,9 +22,10 @@
   var stepT0 = Date.now();
   function save() { try { sessionStorage.setItem(KEY, JSON.stringify({ v: R.version, S: S, ACT: ACT })); } catch (e) {} }
 
-  /* ---------------- lookups ---------------- */
-  var market = function () { return R.markets.find(function (m) { return m.id === S.market; }); };
-  var cat = function () { return R.categories.find(function (c) { return c.id === S.cat; }); };
+  /* ---------------- lookups and pricing (engine.js, shared with the server) ---------------- */
+  var EN = window.RCEngine.make(R, S);
+  var market = EN.market, cat = EN.cat, optsOf = EN.optsOf, prodQ = EN.prodQ, allQ = EN.allQ, visible = EN.visible,
+    logistics = EN.logistics, defaultOf = EN.defaultOf, val = EN.val, setVal = EN.setVal, tierInfo = EN.tierInfo, compute = EN.compute;
   var FX = { live: {}, at: null, source: '' };
   function fxFor(id) {
     var c = R.currencies[id], ref = c.fx, L = FX.live[id], r = R.fxRules || {};
@@ -35,138 +37,13 @@
   }
   var curInfo = function () { var m = market(); var id = S.cur || (m ? m.def : 'NGN'); var f = fxFor(id); return Object.assign({ id: id }, R.currencies[id], { fx: f.fx, how: f.how }); };
   function fxLine(cur) { if (cur.id === 'NGN') return ''; return cur.symbol + '1 = ₦' + Math.round(cur.fx).toLocaleString('en-GB') + ' (' + cur.how + (cur.how === 'live' && FX.at ? ', ' + new Date(FX.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '') + ')'; }
-  function optsOf(q) {
-    var list = Array.isArray(q.options) ? q.options : q.options[market() ? market().revenue : 'ngn'];
-    var c = cat(); return list.filter(function (o) { return !o.cats || !c || o.cats.indexOf(c.id) > -1; });
-  }
-  function prodQ(c) { return (c.production || []).map(function (id) { return R.production[id]; }).filter(Boolean); }
-  function allQ(c) { return c.questions.concat(prodQ(c), logistics(c)); }
-  function visible(c, q) {
-    var rule = q.show || q.hideIf; if (!rule) return true;
-    if (rule.cats && rule.cats.indexOf(c.id) < 0) return true;
-    var w = allQ(c).find(function (x) { return x.id === rule.q; }), wv = w ? val(c, w) : null;
-    var hit = !!w && (Array.isArray(wv) ? wv.some(function (x) { return rule.in.indexOf(x) > -1; }) : rule.in.indexOf(wv) > -1);
-    return q.show ? hit : !hit;
-  }
-  function logistics(c) { return (c.logistics || []).map(function (id) { return id === 'formats' ? R.shared.videoFormats : R.shared[id]; }).filter(Boolean); }
-  function defaultOf(q) {
-    if (q.type === 'range') return q.def;
-    if (q.type === 'assets') return {};
-    var o = optsOf(q);
-    if (q.type === 'multi') return o.filter(function (x) { return x.def; }).map(function (x) { return x.id; });
-    return (o.find(function (x) { return x.def; }) || o[0]).id;
-  }
-  function val(c, q) {
-    var a = S.ans[c.id] || {}, v = a[q.id];
-    if (v === undefined) return defaultOf(q);
-    if (q.type === 'single' && !optsOf(q).some(function (o) { return o.id === v; })) return defaultOf(q);
-    return v;
-  }
-  function setVal(c, q, v) { (S.ans[c.id] = S.ans[c.id] || {})[q.id] = v; }
-  var sum = function (a) { return a.reduce(function (s, x) { return s + x.v; }, 0); };
-
-  /* ---------------- tier ---------------- */
-  function tierInfo() {
-    var pts = 0, np = false, u = 0, known = !!S.about.org, why = [];
-    R.about.forEach(function (q) {
-      var o = optsOf(q).find(function (x) { return x.id === S.about[q.id]; });
-      if (!o) return;
-      pts += o.pts || 0; if (o.np) np = true; u += o.u || 0; why.push(q.id + ':' + o.label);
-    });
-    var T = R.tierRules, id;
-    if (!known) id = 'standard';
-    else if (pts >= T.enterprise) id = 'enterprise';
-    else if (pts >= T.growth) id = 'growth';
-    else if (pts >= T.standard) id = 'standard';
-    else if (pts >= T.small) id = 'small';
-    else id = np && pts <= T.community ? 'community' : 'startup';
-    return { t: R.tiers.find(function (t) { return t.id === id; }), pts: pts, u: u, known: known, signals: why };
-  }
-
-  /* ---------------- engine ---------------- */
-  function volDisc(n) { var d = 0; R.volume.steps.forEach(function (s) { if (n >= s.from) d = s.off; }); return d; }
-  function compute() {
-    var c = cat(); if (!c) return null;
-    var m = market() || R.markets[0], L = m.level, T = tierInfo(), tm = T.t.m;
-    var all = allQ(c).filter(function (q) { return visible(c, q); });
-    var base = c.base, mult = 1, scale = 1, u = T.u, lines = [], pass = [], perMin = 1, perDay = 1, chosen = [], unsure = 0;
-    var lenQ = c.questions.find(function (q) { return q.id === 'length'; }); if (lenQ) perMin = Math.max(1, val(c, lenQ) / 60);
-    var dayQ = c.questions.find(function (q) { return q.id === 'days'; }); if (dayQ) perDay = val(c, dayQ);
-    var charQ = c.questions.find(function (q) { return q.id === 'chars'; }), chars = charQ && visible(c, charQ) ? val(c, charQ) : 0;
-    all.forEach(function (q) {
-      if (q.type === 'range') { if (q.scale) scale *= Math.pow(val(c, q) / q.scale.ref, q.scale.exp); return; }
-      if (q.type === 'assets') {
-        var a = val(c, q);
-        q.items.forEach(function (it) { if (a[it.id] === 'need' && it.need) chosen.push({ q: q, o: Object.assign({ label: it.need.line || it.label }, it.need) }); });
-        return;
-      }
-      var v = val(c, q);
-      optsOf(q).filter(function (o) { return q.type === 'multi' ? v.indexOf(o.id) > -1 : o.id === v; }).forEach(function (o) { chosen.push({ q: q, o: o }); });
-    });
-    chosen = chosen.filter(function (x) {
-      var w = x.o.when; if (!w) return true;
-      var wq = all.find(function (q) { return q.id === w.q; }); if (!wq) return false;
-      var wv = val(c, wq); wv = Array.isArray(wv) ? wv : [wv];
-      return w.any.some(function (id) { return wv.indexOf(id) > -1; });
-    });
-    var needScale = 1;
-    chosen.forEach(function (x) { var o = x.o; if (o.b) base += o.b; if (o.m) mult *= o.m; if (o.needScale) needScale *= o.needScale; if (o.u) { u += o.u; unsure++; } });
-    var production = base * scale * mult, floored = false;
-    if (production < (c.min || 0)) { production = c.min; floored = true; }
-    chosen.forEach(function (x) {
-      var asset = x.q.type === 'assets' || x.o.aiScale, ns = asset ? needScale : 1;
-      var o = x.o, label = (o.line || o.label) + (asset && ns < 1 ? ' with AI' : ''), k = (o.perMin ? perMin : 1) * (o.perDay ? perDay : 1) * (o.perChar ? Math.max(1, chars) : 1) * ns;
-      if (o.p) lines.push({ label: label, v: production * o.p * ns });
-      if (o.a) lines.push({ label: label, v: o.a * k });
-      if (o.pass) pass.push({ label: label, v: o.pass * k });
-    });
-    var merge = function (arr) { var m = {}, out = []; arr.forEach(function (l) { if (m[l.label]) m[l.label].v += l.v; else { m[l.label] = { label: l.label, v: l.v }; out.push(m[l.label]); } }); return out; };
-    lines = merge(lines); pass = merge(pass);
-    var n = S.plan.count || 1, vd = volDisc(n);
-    var ret = R.retainer.options.find(function (o) { return o.id === S.plan.retainer; }) || R.retainer.options[0];
-    var disc = Math.max(vd, ret.off || 0), discFrom = (ret.off || 0) > vd ? 'retainer' : 'volume';
-    var payOff = (R.payPref.options.find(function (o) { return o.id === S.plan.pay; }) || {}).off || 0;
-    var work1 = production + sum(lines), pass1 = sum(pass);
-    /* Tier premiums are folded into each line; tier discounts are shown as their own line. */
-    var rows = [], up = tm > 1 ? tm : 1;
-    rows.push({ label: n > 1 ? 'Production × ' + n : 'Production', v: production * n * L * up });
-    lines.forEach(function (l) { rows.push({ label: l.label + (n > 1 ? ' × ' + n : ''), v: l.v * n * L * up }); });
-    if (disc) rows.push({ label: (discFrom === 'retainer' ? 'Retainer saving' : 'Volume saving') + ' (' + Math.round(disc * 100) + '%)', v: -work1 * n * disc * L * up, neg: true });
-    if (tm < 1) rows.push({ label: T.t.label + ' discount (' + Math.round((1 - tm) * 100) + '%)', v: work1 * n * (1 - disc) * (tm - 1) * L, neg: true });
-    pass.forEach(function (l) { rows.push({ label: l.label + ' (third party)' + (n > 1 ? ' × ' + n : ''), v: l.v * n * L }); });
-    var setup = 0;
-    if (S.plan.series === 'yes') {
-      setup = (production * R.seriesSetup.share + chars * R.seriesSetup.perChar) * tm * L;
-      if (!ret.months) rows.push({ label: R.seriesSetup.line, v: setup });
-    }
-    var pre = (work1 * n * (1 - disc) * tm + pass1 * n) * L + (ret.months ? 0 : setup);
-    if (payOff) rows.push({ label: 'Paid in full upfront (' + Math.round(payOff * 100) + '%)', v: -pre * payOff, neg: true });
-    var total = pre * (1 - payOff);
-    var b = R.band, lo = total * Math.max(0.5, b.lo - u * b.perUnsure * 0.5), hi = total * (b.hi + u * b.perUnsure);
-    // payment
-    var tierPay = R.payment.find(function (p) { return total <= p.upTo; });
-    var plan = tierPay.plan.map(function (p) { return [p[0], p[1]]; });
-    var dep = plan[0][1], turn = val(c, R.shared.turnaround), floor = 0;
-    if (S.market !== 'ng') floor = Math.max(floor, R.depositFloor.international);
-    if (turn === 'rush' || turn === 'emerg') floor = Math.max(floor, R.depositFloor.rush);
-    if (dep < floor && plan.length > 1) { var rest = 1 - dep; plan[0][1] = floor; for (var i = 1; i < plan.length; i++) plan[i][1] = plan[i][1] / rest * (1 - floor); }
-    if (payOff) plan = [['Full payment before work starts', 1]];
-    if (ret.months && !payOff) plan = [['Each month, in advance', 1]];
-    // timeline
-    var speed = (R.shared.turnaround.options.find(function (o) { return o.id === turn; }) || {}).speed || 1;
-    var effort = work1 * n * (1 - disc) / R.dayRate, weeks = (effort / 5 + 1) * speed;
-    var timeline = turn === 'emerg' ? Math.max(2, Math.round(effort * 0.6)) + '–' + Math.max(4, Math.round(effort)) + ' working days, if I’m free' :
-      ret.months ? 'Delivered through the month, ' + ret.months + ' months' :
-        (function () { var a = Math.max(1, Math.round(weeks * 0.8)), z = Math.max(a + 1, Math.round(weeks * 1.25)); return a + '–' + z + ' weeks from approved brief'; })();
-    return { c: c, m: m, T: T, rows: rows, total: total, setup: setup, chars: chars, lo: lo, hi: hi, plan: plan, timeline: timeline, ret: ret, n: n, unsure: unsure, floored: floored, production: production };
-  }
-
   /* ---------------- money ---------------- */
   function conv(v, cur) { cur = cur || curInfo(); var x = v / cur.fx; var r = cur.round; if (Math.abs(x) < r * 4) r = cur.id === 'NGN' ? 1000 : 5; return Math.round(x / r) * r; }
   function fmt(v, cur) { cur = cur || curInfo(); var x = conv(v, cur); return (x < 0 ? '−' : '') + cur.symbol + Math.abs(x).toLocaleString('en-GB'); }
   /* milestone amounts that add up exactly to the rounded total */
   function milestones(E, cur) { var tot = conv(E.total, cur), out = [], acc = 0; E.plan.forEach(function (p, i) { var v = i === E.plan.length - 1 ? tot - acc : conv(E.total * p[1], cur); acc += v; out.push(v); }); return out; }
   function fmtRange(E, cur) { return fmt(E.lo, cur) + ' – ' + fmt(E.hi, cur); }
+  function totText(E, cur) { return E.status === 'call' ? R.copy.callTotal + ' ' + fmt(E.lo, cur) : fmtRange(E, cur); }
   function rangeHTML(E, cur) { return '<span>' + fmt(E.lo, cur) + ' –</span> <span>' + fmt(E.hi, cur) + '</span>'; }
   function unitTxt(q, v) {
     if (q.unit === 's') { var m = Math.floor(v / 60), s = v % 60; return m ? m + ' min' + (s ? ' ' + s + ' s' : '') : s + ' s'; }
@@ -373,7 +250,7 @@
   /* ---------------- tier line ---------------- */
   function updateTier() {
     var el = $('tierline'); if (!el) return; var T = tierInfo();
-    el.innerHTML = T.known ? '<span class="pill">' + esc(T.t.label) + '</span><span><b>' + esc(T.t.note) + '.</b> ' + (T.t.m < 1 ? Math.round((1 - T.t.m) * 100) + '% off standard pricing.' : T.t.m === 1 ? 'Standard pricing.' : 'Pricing reflects the scale of your organisation.') + '</span>' : '<span class="mute">Your pricing tier will show here.</span>';
+    el.innerHTML = T.known ? '<span class="pill">' + esc(T.t.label) + '</span><span><b>' + esc(T.t.note) + '.</b> ' + (T.t.m < 1 ? Math.round((1 - T.t.m) * 100) + '% off standard pricing. ' + esc(R.copy.tierCheck) : T.t.m === 1 ? 'Standard pricing.' : 'Pricing reflects the scale of your organisation.') + '</span>' : '<span class="mute">Your pricing tier will show here.</span>';
   }
 
   /* ---------------- estimate panel ---------------- */
@@ -386,7 +263,11 @@
       est.innerHTML = head + '<div class="tot">—</div><p class="sub">Pick a project to see a figure.</p>' + curBtns + '</div><div class="bd"><p class="empty">' + (S.market ? 'Choose a project type and the estimate appears here, updating with every answer.' : 'Start with where you’re based. Prices follow your market and your organisation.') + '</p><p class="note">' + esc(R.copy.estimate) + '</p></div>';
       $('bar').hidden = true; bindEst(); return;
     }
-    var tot = fmtRange(E, cur);
+    var tot = totText(E, cur);
+    var shown = E.checks.filter(function (x) { return x.level !== 'flag'; });
+    var st = R.copy.status[E.status] ? '<span class="st st-' + E.status + '">' + esc(R.copy.status[E.status]) + '</span>' : '';
+    var checksHTML = shown.length ? '<div class="checks">' + shown.map(function (x) { return '<p class="ck ck-' + x.level + '">' + esc(x.msg) + '</p>'; }).join('') + '</div>' : '';
+    Object.keys(E.effective).forEach(function (k) { var o = $('o-c-' + k), q = allQ(E.c).find(function (x) { return x.id === k; }); if (o && q) o.textContent = unitTxt(q, val(E.c, q)) + ' · priced as ' + unitTxt(q, E.effective[k]); });
     var rows = '<div class="rows">' + E.rows.map(function (r) { return '<div class="' + (r.neg ? 'neg' : '') + '"><span>' + esc(r.label) + '</span><span>' + fmt(r.v, cur) + '</span></div>'; }).join('') + '<div class="sum"><span>Most likely</span><span>' + fmt(E.total, cur) + '</span></div></div>';
     var parts = milestones(E, cur);
     var pay = '<div><h4>Payment</h4><div class="ms">' + E.plan.map(function (p, i) { return '<div style="--c:' + HC[(i * 2 + 3) % 9] + '"><i></i><span>' + esc(p[0]) + ' (' + Math.round(p[1] * 100) + '%)</span><span>' + cur.symbol + parts[i].toLocaleString('en-GB') + '</span></div>'; }).join('') + '</div></div>';
@@ -395,8 +276,8 @@
     if (bv) { var bn = bv * cur.fx; bmsg = bn < E.lo ? R.copy.budgetLow : bn > E.hi ? R.copy.budgetHigh : R.copy.budgetFits; }
     var bm = $('budgetMsg'); if (bm) { bm.hidden = !bmsg; bm.textContent = bmsg; bm.className = 'budget' + (bv && bv * cur.fx < E.lo ? ' low' : ''); }
     var cmp = compareAI(E, cur);
-    est.innerHTML = head + '<div class="tot" id="tot">' + rangeHTML(E, cur) + '</div><p class="sub">' + esc(E.c.label) + (E.n > 1 ? ' · ' + E.n + ' pieces' : '') + (E.unsure ? ' · range widened for “not sure” answers' : '') + '</p>' + curBtns + '</div>' +
-      '<div class="bd">' + rows + '<div class="kv"><b>Timeline</b><span>' + esc(E.timeline) + '</span><b>Revisions</b><span>' + esc((R.shared.revisions.options.find(function (o) { return o.id === val(E.c, R.shared.revisions); }) || {}).label || '') + '</span><b>Market</b><span>' + esc(E.m.label) + '</span>' + (cur.id !== 'NGN' ? '<b>Rate</b><span>' + esc(fxLine(cur)) + '</span>' : '') + '</div>' + pay + ret +
+    est.innerHTML = head + '<div class="tot" id="tot">' + (E.status === 'call' ? '<span>' + esc(R.copy.callTotal) + '</span> <span>' + fmt(E.lo, cur) + '</span>' : rangeHTML(E, cur)) + '</div>' + st + '<p class="sub">' + esc(E.c.label) + (E.n > 1 ? ' · ' + E.n + ' pieces' : '') + (E.unsure ? ' · range widened for “not sure” answers' : '') + '</p>' + curBtns + '</div>' +
+      '<div class="bd">' + checksHTML + rows + '<div class="kv"><b>Timeline</b><span>' + esc(E.timeline) + '</span><b>Revisions</b><span>' + esc((R.shared.revisions.options.find(function (o) { return o.id === val(E.c, R.shared.revisions); }) || {}).label || '') + '</span><b>Market</b><span>' + esc(E.m.label) + '</span>' + (cur.id !== 'NGN' ? '<b>Rate</b><span>' + esc(fxLine(cur)) + '</span>' : '') + '</div>' + pay + ret +
       (bmsg ? '<div class="budget' + (bv * cur.fx < E.lo ? ' low' : '') + '">' + esc(bmsg) + '</div>' : '') + cmp + '<p class="note">' + esc(R.copy.estimate) + '</p></div>';
     if (tot !== lastTot && lastTot && !reduce) { var t = $('tot'); t.classList.add('tick'); }
     lastTot = tot;
@@ -489,11 +370,13 @@
     if (S.plan.budget) L.push('Client budget: ' + cur.symbol + S.plan.budget);
     if (E.unsure) L.push('“Not sure” answers: ' + E.unsure);
     if (E.floored) L.push('Minimum project fee applied.');
+    L.push('Status: ' + ({ ready: 'Ready', adjusted: 'Adjusted to what’s possible', call: 'Needs a call' })[E.status], 'Valid until: ' + validUntil());
     if (E.setup) L.push('Series setup (one-off): ' + fmt(E.setup, cur) + (E.ret.months ? ', billed with the first month' : ', included above'));
     if (S.about['for'] === 'other') L.push('NOTE: arranged by an intermediary for another organisation; tier answers are about the paying organisation.');
     var refQ = R.production.reference; if (E.c.production && E.c.production.indexOf('reference') > -1 && val(E.c, refQ) === 'close') L.push('FLAG: wants something close to a specific ad or film. Check whose, and steer to an original look.');
     var aiQ = R.production.ai, aiV = E.c.production && E.c.production.indexOf('ai') > -1 ? val(E.c, aiQ) : null;
     if (aiV) L.push('AI in the production: ' + labelOf(aiQ, aiV) + (aiV === 'elements' || aiV === 'led' ? ' (rights note: AI-generated parts may not be copyrightable; exclusivity not guaranteed for them)' : ''));
+    if (E.checks.length) { hr('Checks'); E.checks.forEach(function (x) { L.push((x.level === 'flag' ? 'FLAG (owner only)' : x.level.toUpperCase()) + ': ' + x.msg); }); }
     hr('Tier');
     L.push(T.t.label + ' (×' + T.t.m + ', score ' + T.pts + ')' + (T.t.m > 1 ? ' — premium folded into the lines the client sees' : ''));
     aboutPairs().forEach(function (p) { L.push(p[0] + ': ' + p[1]); });
@@ -513,10 +396,10 @@
     var btn = $('sendBtn'); if (!validLead()) { $('err-5').textContent = 'Please add your name, a valid email and tick the box.'; return; }
     if ($('lHp') && $('lHp').value) return;
     var R0 = report(), E = R0.E, cur = curInfo();
-    var data = { ref: S.ref, category: E.c.id, tier: E.T.t.id, market: E.m.id, currency: cur.id, lo: conv(E.lo, cur), hi: conv(E.hi, cur), mid: conv(E.total, cur), lo_ngn: Math.round(E.lo), hi_ngn: Math.round(E.hi), selections: selections(), about: aboutPairs(), plan: S.plan, followups: AI.follow.qs.map(function (q) { return [q.q, AI.follow.ans[q.id] || '']; }), links: S.refs.links, activity: R0.A, version: R.version };
+    var data = { ref: S.ref, category: E.c.id, tier: E.T.t.id, market: E.m.id, currency: cur.id, lo: conv(E.lo, cur), hi: conv(E.hi, cur), mid: conv(E.total, cur), lo_ngn: Math.round(E.lo), hi_ngn: Math.round(E.hi), mid_ngn: Math.round(E.total), status: E.status, checks: E.checks.map(function (x) { return x.id; }), state: window.RCEngine.stateOf(S), selections: selections(), about: aboutPairs(), plan: S.plan, followups: AI.follow.qs.map(function (q) { return [q.q, AI.follow.ans[q.id] || '']; }), links: S.refs.links, activity: R0.A, version: R.version };
     btn.disabled = true; btn.textContent = 'Sending…'; $('err-5').textContent = '';
     var lead = { name: S.lead.name.trim(), email: S.lead.email.trim(), org: S.lead.org || '', phone: S.lead.phone || '' };
-    var subj = 'Rate card estimate ' + S.ref + ' from ' + lead.name + ' (' + fmtRange(E, cur) + ')';
+    var subj = (E.status === 'call' ? '[Needs a call] ' : E.status === 'adjusted' ? '[Adjusted] ' : '') + 'Rate card estimate ' + S.ref + ' from ' + lead.name + ' (' + totText(E, cur) + ')';
     fetchT('/api/estimate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ref: S.ref, lead: lead, consent: true, subject: subj, text: R0.text, data: data }) }, 15000)
       .then(function (r) { return r.json().then(function (j) { return r.ok && j.mailed; }); }).catch(function () { return false; })
       .then(function (ok) {
@@ -528,7 +411,7 @@
       .then(function (via) {
         if (!via) { location.href = 'mailto:' + R.owner.email + '?subject=' + encodeURIComponent(subj) + '&body=' + encodeURIComponent(R0.text.slice(0, 1800)); via = 'mailto'; }
         S.sent = true; save(); renderSteps();
-        try { sessionStorage.setItem('dp-rc', JSON.stringify({ ref: S.ref, name: lead.name, email: lead.email, org: lead.org, phone: lead.phone, category: E.c.label, range: fmtRange(E, cur), budget: S.plan.budget ? cur.symbol + S.plan.budget : '', links: S.refs.links, at: Date.now() })); } catch (e) {}
+        try { sessionStorage.setItem('dp-rc', JSON.stringify({ ref: S.ref, name: lead.name, email: lead.email, org: lead.org, phone: lead.phone, category: E.c.label, range: totText(E, cur), budget: S.plan.budget ? cur.symbol + S.plan.budget : '', links: S.refs.links, at: Date.now() })); } catch (e) {}
         aiCall({ action: 'insight', context: ctx(E), outcome: 'sent' });
         btn.textContent = 'Sent'; showSplash(via);
       });

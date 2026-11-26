@@ -2,6 +2,7 @@
 //   ?type=insights (default) or ?type=estimates
 //   ?format=json (default) or ?format=csv
 //   ?days=90 (how far back, default 90)
+// Estimates include the server check: status (ready, adjusted, call), whether the page's figure matched, the server's figure and owner-only flags.
 // Insights are the helper's notes on what clients wanted and what the calculator should add. Estimates are every emailed estimate.
 import { json, ownerOk } from '../_lib/common.js';
 import { ensureRateTables } from '../_lib/rates-db.js';
@@ -22,7 +23,7 @@ export async function onRequestGet({ request, env }) {
   const days = Math.min(3650, Math.max(1, +u.searchParams.get('days') || 90));
   const since = Date.now() - days * 86400e3;
   const sql = type === 'estimates'
-    ? `SELECT id, ref, datetime(created_at/1000,'unixepoch') AS at, name, email, org, phone, category, tier, market, net_country, currency, lo, hi, mailed FROM rc_estimates WHERE created_at > ? ORDER BY created_at DESC LIMIT 2000`
+    ? `SELECT id, ref, datetime(created_at/1000,'unixepoch') AS at, name, email, org, phone, category, tier, market, net_country, currency, lo, hi, CASE WHEN json_valid(data) THEN json_extract(data,'$.server.status') END AS status, CASE WHEN json_valid(data) THEN json_extract(data,'$.server.match') END AS figures_match, CASE WHEN json_valid(data) THEN json_extract(data,'$.server.total_ngn') END AS server_ngn, CASE WHEN json_valid(data) THEN json_extract(data,'$.server.flags') END AS flags, mailed FROM rc_estimates WHERE created_at > ? ORDER BY created_at DESC LIMIT 2000`
     : `SELECT id, datetime(created_at/1000,'unixepoch') AS at, action, category, tier, market, currency, est_mid, insight, feature FROM rc_insights WHERE created_at > ? ORDER BY created_at DESC LIMIT 5000`;
   const { results } = await env.NEWS_DB.prepare(sql).bind(since).all();
   if (u.searchParams.get('format') === 'csv') {
