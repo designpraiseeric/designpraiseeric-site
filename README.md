@@ -72,6 +72,13 @@ A budget calculator that sits off the main page, reachable by direct link (also 
 - **Exact counts (PR #12, 26 Nov).** Film: number of locations (1–12, a slider instead of bands; a shoot day covers 3 at most and 2 comfortably, so shoot days rise to fit) and hired actors (1–30, ₦50k per actor per shoot day, with or without a casting call); studio rental is its own question. 3D: products, objects or sets (1–20), separate shots (1–60, default 6), and for character work a character count and speaking parts with lip-sync. Option field `perQ:'id'` scales a line by a range question's value. A question that depends on a hidden question is hidden too (e.g. actors when the film is AI-led). "Priced as …" notes sit under the slider.
 - Tests: `node --test tests/rate-card.test.mjs` (anchor, checks, savings floor, tampering, monotonic prices, fuzz, server check).
 
+## How I work (/how-i-work/)
+The client-facing process page: eight stages (Getting in touch → Afterwards), each with what happens, what the client provides, what they get and when it moves on; a rough timeline by project kind; how feedback rounds work; payment plans and terms; the six values (IDEALS) linked to the stages they show in.
+- Stage text, timeline presets (working days) and values are arrays at the top of the page's script. Edit there.
+- Payment plans, deposit floors and the terms are read live from `rate-card/rates.js` (`payment`, `depositFloor`, `policies`), so the page always matches the rate card. The `keep` list chooses which policies show.
+- Linked from /work/ and /work/chimpx/ (nav), /book/ and /rate-card/ (footer).
+- The private, step-by-step version for the owner is the Playbook tab at /brand/ (`playbook/` in the brand repo).
+
 ## Works page (/work/) and the under-construction splash
 - **/work/** lists every case study (newest piece first; the first one is shown large). To add a piece, copy one `<a class="w">` block in `work/index.html` and point it at the new `/work/<project>/` page. The "Tools and programs" section links to `/tools/` and the apps; add a `.card` there for any new program.
 - **The home page is closed for now.** `js/dp-gate.js` (loaded on every page) turns any link to the home page — the logo, "Back to the site", old `/#…` links — into a splash saying the main site is still under construction, with buttons to Work, Tools and Book a project. A direct visit to `/` shows the same splash with no close button, and the home page carries `noindex`.
