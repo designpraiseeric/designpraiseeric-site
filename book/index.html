@@ -116,7 +116,7 @@ $('brief').addEventListener('submit',function(e){e.preventDefault();
  var btn=$('send');btn.disabled=true;btn.textContent='Sending…';
  var fd=new FormData();fd.append('access_key',WEB3FORMS_KEY);fd.append('subject',subj);fd.append('from_name','designpraise booking');fd.append('name',n);fd.append('email',em);fd.append('replyto',em);fd.append('message',body);
  fetch('https://api.web3forms.com/submit',{method:'POST',body:fd,headers:{Accept:'application/json'}}).then(function(r){return r.json()}).then(function(j){if(!j.success)throw 0;
-  $('done').innerHTML='<b>Thank you, '+n.split(' ')[0].replace(/[<>&]/g,'')+'.</b><span>Your brief is with me. I’ll reply to '+em.replace(/[<>&]/g,'')+' within two working days to set up a call.</span><span><a href="/">Back to the site</a></span>';$('done').classList.add('on');btn.textContent='Sent';
+  $('done').innerHTML='<b>Thank you, '+n.split(' ')[0].replace(/[<>&]/g,'')+'.</b><span>Your brief is with me. I’ll reply to '+em.replace(/[<>&]/g,'')+' within two working days to set up a call.</span><span><a href="/work/">See my work</a></span>';$('done').classList.add('on');btn.textContent='Sent';
   try{sessionStorage.removeItem('dp-rc')}catch(e){}
  }).catch(function(){btn.disabled=false;btn.textContent='Send the brief';
   $('done').innerHTML='<span>Your email app should open with the brief ready to send. If it doesn’t, email <a href="mailto:'+EMAIL+'">'+EMAIL+'</a> or <a href="https://wa.me/'+WA+'?text='+encodeURIComponent(body)+'" target="_blank" rel="noopener">send it on WhatsApp</a>.</span>';$('done').classList.add('on');
@@ -125,6 +125,7 @@ $('brief').addEventListener('submit',function(e){e.preventDefault();
 });
 })();
 </script>
+<script src="/js/dp-gate.js" defer></script>
 <script src="/js/seasons.js" defer></script>
 <script src="/js/seasons-art.js" defer></script>
 <script src="/js/dp-extras.js" defer></script>
